@@ -9,7 +9,23 @@ created_at: "2025-06-06"
 
 Today, I started researching the components that I would depend on. (stm32 ecosystem, i2c multiplexers, sensors) I then created some technical sketches of the device and drew some core concepts. 
 
-![1](https://github.com/user-attachments/assets/8d7075cd-d2af-4125-8053-0056ec37d771)
+Feature Set
+ - Recognizable by Ableton (or any general DAW software)
+ - Sends mpe midi (duh)
+ - USB-C connection for flashing & otg device
+ - (optional) 3.5mm jack for int. synth engine
+ - Cool rgb indicators
+
+![image](https://github.com/user-attachments/assets/6459d8a0-7505-47d1-8316-bf31698aa046)
+
+Components Needed
+ - **STM32H7**43VIH (great mcu, bga style needing multilayer pcb fab)
+ - TMAG5273 - I2C hall effect sensor
+ - TCA9548A - For multiplexing i2c connections
+ - Possibly SDRAM for an internal synth engine
+ - IO Ports, Encoder
+ - other smd components
+
 
 **Total time spent: ~3 hours**
 
@@ -21,7 +37,7 @@ The core idea of this controller was to use a hall effect sensor (tmag5273) to m
 
 Two resources were used in wiring the sensor. I looked at the [datasheet](https://www.ti.com/lit/ds/symlink/tmag5273.pdf) first to get an idea of the pinout and reference circuit, as well as how sparkfun implemented it through their board [here](https://docs.sparkfun.com/SparkFun_Qwiic_Hall_Effect_Sensor_TMAG5273/assets/board_files/schematic-mini.pdf). 
 
-I decided for now to use my esp32 devkit to test out the sensor before switching to the stm32 ecosystem.
+I decided for now to use my [esp32 devkit](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1) to test out the sensor before switching to the stm32 ecosystem.
 
 The INT pin for disabling the sensor was left unconnected, SDA and SCL to any GPIO with a 4.7k pullup resistor, and VCC to 3.3V. 
 
