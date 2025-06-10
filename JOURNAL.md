@@ -104,3 +104,13 @@ void loop() {
 ![image](https://github.com/user-attachments/assets/bb2c4166-27de-40a5-b84f-6ef6e17467a9)
 
 **Total time spent: 3.5 hours**
+
+# June 9th: Designing the flexures for the keys
+
+I started off on a new page and drew two concepts of how I could implement [flexures](https://web.mit.edu/mact/www/Blog/Flexures/FlexureIndex.html) in a key. It would allow me to build the device with less parts with the same functionality, as well as saving on money. The print layers also had to be thought of to make sure flexing won't compromise on durability and break. 
+
+Below is some rough sketches of how the keys would look like and how it would come together with the pcb. 
+
+![image](https://github.com/user-attachments/assets/45038e86-c804-486a-84d6-df553b95d1cc)
+
+**Total time spent: 2 hours**
