@@ -114,3 +114,47 @@ Below is some rough sketches of how the keys would look like and how it would co
 ![image](https://github.com/user-attachments/assets/45038e86-c804-486a-84d6-df553b95d1cc)
 
 **Total time spent: 2 hours**
+
+# June 10th: Cadding and 3d printing key prototypes
+
+I decided that I'll choose the more simpler key with only one model that i need to create. I am using Fusion 360 to accomplish this with their personal plan.
+
+Key Requirements (ahaha get it)
+ - Fits a 5mm cube neodymium magnet
+ - Flexes easily, doesn't strain fingers
+ - Can flex in all the neccesary axis
+ - Use little to no extra plastic when printing
+
+## Prototype V1
+
+![v1](https://github.com/user-attachments/assets/73cd9562-37d2-4ac5-a7ac-75ec2b59992d)
+
+This was the first prototype to kickstart my idea of a key. I started off with a side sketch and extruded it, then adding features in the other dimension. 
+
+![image](https://github.com/user-attachments/assets/819f46e1-ac3f-4cde-a41d-1ba0ac762de0)
+
+Well.. It did not turn out great the first try, and of course it would never be perfect the first try. I designed the flexure to be too thin and it wouldn't hold up the upper weight of the key. It also could not fit the magnet.
+
+Instead of it flexing left or right, the key decided to rotate in place which i did not intend to. But wait... This gave me a new **game breaking** idea! Instead of+ designing it to move in two axises, I can just have it move in one axis and rotate in place which can also be measured by the sensor! It is something so unique that I could have never thought of without this prototype. 
+
+## Protype V2
+
+![v2](https://github.com/user-attachments/assets/404164a9-7ace-402b-8909-9496b2a2501b)
+
+This second prototype solved many problems of the first one. It finally held the magnet, its own weight, and almost has the rotation action perfect.
+
+![image](https://github.com/user-attachments/assets/697a05ec-768d-458f-8234-b37619ebfad9)
+
+The only two problems now is that it is a bit stiff for a key on a midi keyboard as well as something I didn't think about for fabrication. Pressing it all the way down while trying to rotate it scrapes the layer lines making an irritating noise. 
+
+## Prototype V3
+
+![v3](https://github.com/user-attachments/assets/1b5caa83-9d4c-4ef3-8dd3-1ef0b61ddda2)
+
+This prototype solved the issue of the key being too stiff. It requires less force to push down now, but still has the scraping problem which I'm not sure how to solve. I'll do that later lol.
+
+![image](https://github.com/user-attachments/assets/a570f237-cc6d-4073-9218-a842fe3393ff)
+
+The data isn't as smooth as i hoped, but I think thats an issue in the code. The white line looking like a sine wave is the rotation movement of the key.
+
+**Total time spent: 5 hours** (2 hrs of printing)
