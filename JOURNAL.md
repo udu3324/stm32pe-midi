@@ -158,3 +158,13 @@ This prototype solved the issue of the key being too stiff. It requires less for
 The data isn't as smooth as i hoped, but I think thats an issue in the code. The white line looking like a sine wave is the rotation movement of the key.
 
 **Total time spent: 5 hours** (2 hrs of printing)
+
+# June 11-13th: Prototyping the smaller keys
+
+I decided that there would be a smaller version of a key for the sharps and flats on the controller. It seemed easy at first until changing the length of a key would mean tweaking every other aspect of the flexure endlessly.
+
+![image](https://github.com/user-attachments/assets/2eff6605-5d60-4495-8d86-32789546f280)
+
+A total of 13 prototypes were printed. Many problems were faced, including but not limited to.... low durability, permanent deformation, too much pressure to push down, no springines, and my lack of knowledge in making flexures. Although I chose aesthetics over functionality, I think everything will turn out great. 
+
+**Total time spent: 2.5 hours** (accumulated, not including hours of printing)
