@@ -169,7 +169,7 @@ A total of 13 prototypes were printed. Many problems were faced, including but n
 
 **Total time spent: 2.5 hours** (accumulated, not including hours of printing)
 
-June 16th: Creating board schematics
+# June 16th: Creating board schematics
 
 I started working on the schematics for the board to bring all the components I need together.
 
