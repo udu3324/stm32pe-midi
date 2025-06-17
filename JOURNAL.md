@@ -168,3 +168,15 @@ I decided that there would be a smaller version of a key for the sharps and flat
 A total of 13 prototypes were printed. Many problems were faced, including but not limited to.... low durability, permanent deformation, too much pressure to push down, no springines, and my lack of knowledge in making flexures. Although I chose aesthetics over functionality, I think everything will turn out great. 
 
 **Total time spent: 2.5 hours** (accumulated, not including hours of printing)
+
+June 16th: Creating board schematics
+
+I started working on the schematics for the board to bring all the components I need together.
+
+![image](https://github.com/user-attachments/assets/9b095556-8960-4b0f-af6c-f5bf798f5661)
+
+So far, I have been following the [power supply scheme](https://www.st.com/resource/en/datasheet/stm32h743vi.pdf) from the stm32 datasheet as well as researching some other sources. I chose KiCad to build my board in as it is free and an amazing open source tool. 
+
+I still need to add some sort of fuse to the VBUS of the usb-c to protect against esd, as well as my sensors, leds, possibly a dac with audio out, and most definitely a button to allow flashing firmware to the mcu. 
+
+**Total time spent: 3 hours**
