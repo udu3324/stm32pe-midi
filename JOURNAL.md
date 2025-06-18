@@ -180,3 +180,15 @@ So far, I have been following the [power supply scheme](https://www.st.com/resou
 I still need to add some sort of fuse to the VBUS of the usb-c to protect against esd, as well as my sensors, leds, possibly a dac with audio out, and most definitely a button to allow flashing firmware to the mcu. 
 
 **Total time spent: 3 hours**
+
+# June 17th: Adding the rest
+
+The boot and reset button needed to flash firmware was added as well as some useful indicator LEDs.
+
+![image](https://github.com/user-attachments/assets/f0315bbd-7b02-414f-bda3-ee53db0c141b)
+
+I decided to create a sub-sheet to fit all my sensors on another page. 
+
+![image](https://github.com/user-attachments/assets/1c5f274c-731e-438f-b1e3-1929e54cbb0a)
+
+**Total time spent: 3 hours**
