@@ -192,3 +192,17 @@ I decided to create a sub-sheet to fit all my sensors on another page.
 ![image](https://github.com/user-attachments/assets/1c5f274c-731e-438f-b1e3-1929e54cbb0a)
 
 **Total time spent: 3 hours**
+
+# June 18th: Working on cad assembly
+
+I decided that I would bring everything together to then model the size of the pcb to then take into KiCad. Currently, I am only familiar with OnShape's assembly feature and have no clue how it will go. 
+
+![Untitled](https://github.com/user-attachments/assets/21fadf20-c203-47ec-8d2b-428e16d82cbf)
+
+It went horrible of course. I tried editing my sub-assemblies to add a pcb groove but kept on running into so many issues. It took many sketches and saving/syncing issues until I finally was able to modify parts across f3d projects without f**king everything up. 
+
+![image](https://github.com/user-attachments/assets/4159961d-e60d-4a9c-8dc8-1cdc8b276737)
+
+I made sure to include a 0.15mm gap which would hopefully allow some tolerance for the pcb to fit. (±0.2mm for shape, ±10% for thickness) It would also create a friction fit for the board as well.
+
+**Total time spent: 4 hours**
