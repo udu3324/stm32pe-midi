@@ -219,8 +219,8 @@ I also used KiCad's feature of assigning every symbol to a footprint. I decided 
 
 I decided to add a way to output audio. It uses a MCP4922 and two LM396s to allow simple, not audiophile quality, audio delivery to the user.
 
-![image](https://github.com/user-attachments/assets/7763823e-aee1-4e2e-8eb4-3750f735dc07)
+![image](https://github.com/user-attachments/assets/b55f5278-1351-45b6-abc9-be991cfdd276)
 
-I was able to test a more simplified/mono design of the circuit some time ago with the parts I got from high seas.
+I was able to test a more simplified/mono design of the audio circuit some time ago with the parts I got from high seas.
 
 **Total time spent: 2 hours**
