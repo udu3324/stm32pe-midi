@@ -206,3 +206,21 @@ It went horrible of course. I tried editing my sub-assemblies to add a pcb groov
 I made sure to include a 0.15mm gap which would hopefully allow some tolerance for the pcb to fit. (±0.2mm for shape, ±10% for thickness) It would also create a friction fit for the board as well.
 
 **Total time spent: 4 hours**
+
+# June 20th: Adding leds + more
+
+![image](https://github.com/user-attachments/assets/ba1aeb4b-c904-42d8-9c17-c02ffc613f8d)
+
+I had to multiplex my leds to use less io on the stm32. The TLC5940 seemed like the best fit for me as it was pwm and would be nice if each key would have some sort of power indicator. 
+
+I also used KiCad's feature of assigning every symbol to a footprint. I decided on every capacitor and resistor having the same package size (0805/2012 metric) and it being not microscopic in case of any repairs and to simplify the bom.
+
+![image](https://github.com/user-attachments/assets/4de164a9-6b1b-45ac-ab16-cbfdafc9685d)
+
+I decided to add a way to output audio. It uses a MCP4922 and two LM396s to allow simple, not audiophile quality, audio delivery to the user.
+
+![image](https://github.com/user-attachments/assets/7763823e-aee1-4e2e-8eb4-3750f735dc07)
+
+I was able to test a more simplified/mono design of the circuit some time ago with the parts I got from high seas.
+
+**Total time spent: 2 hours**
