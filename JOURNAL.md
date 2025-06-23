@@ -224,3 +224,21 @@ I decided to add a way to output audio. It uses a MCP4922 and two LM396s to allo
 I was able to test a more simplified/mono design of the audio circuit some time ago with the parts I got from high seas.
 
 **Total time spent: 2 hours**
+
+# June 22th: Cadding plate + pcb layout
+
+![image](https://github.com/user-attachments/assets/9c715d33-bfa5-4c9b-983a-5dedf1defa2b)
+
+I finished up the plate/thing that would hold everything together. So far, most things are press fit into place while the main board uses m3 screws.
+
+![image](https://github.com/user-attachments/assets/794ea05e-b816-4f78-b141-f46df08ebbc2)
+
+I had no clue what i was getting myself into. Everything is laid out with the proper resistors or capacitors next to each other, but its a super dense board which creates a whole list of other challenges.
+
+It was a pain trying to get everything to fit in the first place. I had to remove two extra leds, remove the entire audio output circuit (rip..), redo some schematics, and contemplate my life choices. 
+
+![image](https://github.com/user-attachments/assets/fcb35233-848d-4590-a504-67ed48e1d579)
+
+All that's needed left is to route all the traces and place the pullup resistors for the sda/scl lines, as well as calculating the amount of headers i need for the wires between the three boards.
+
+**Total time spent: 7 hours**
