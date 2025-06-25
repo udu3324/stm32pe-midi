@@ -242,3 +242,27 @@ It was a pain trying to get everything to fit in the first place. I had to remov
 All that's needed left is to route all the traces and place the pullup resistors for the sda/scl lines, as well as calculating the amount of headers i need for the wires between the three boards.
 
 **Total time spent: 7 hours**
+
+# June 23th + 24th: Unseen Constraints - Routing All Traces
+
+![image](https://github.com/user-attachments/assets/5a1312ef-efad-41c4-9509-1b6b9fc4b3fa)
+
+I should have thought of the size of my board before doing anything. That was my hugest mistake. I was constrainted to the size/shape of my board which I never thought of while cadding only until now after some work was done.
+
+I had to...
+
+ - remove some features
+ - resize the board to fit some components
+ - constantly mess around with previous traces (because past me did not think about the future)
+ - edit the heat spreader of the led multiplexer to be smaller which is kinda sus but who cares lol
+ - cope
+
+![image](https://github.com/user-attachments/assets/3e2c604a-bf54-4533-8c70-40bc96dfeb13)
+
+In the end, I managed to get everything wired up. KiCad still yells about certain things being unconnected as well as a list of other stuff that isnt really important. I'm really proud of the work as this is a new high for me.
+
+![image](https://github.com/user-attachments/assets/82984a8d-efe5-418b-a55d-c17eee4ce423)
+
+While 80% done tracing everything, I decided to export the pcb to jlcpcb to see how much it would cost so far. It was priced around ~$140 USD for assembling two boards. I then clicked checkout and... I forgot there was tariffs going on right now.. (totaling around $230)
+
+**Total time spent: ~14 hours**
