@@ -266,3 +266,21 @@ In the end, I managed to get everything wired up. KiCad still yells about certai
 While 80% done tracing everything, I decided to export the pcb to jlcpcb to see how much it would cost so far. It was priced around ~$140 USD for assembling two boards. I then clicked checkout and... I forgot there was tariffs going on right now.. (totaling around $230)
 
 **Total time spent: ~14 hours**
+
+# June 25th: Final touches + more
+
+![kicad_t1TWV0PZLa](https://github.com/user-attachments/assets/4e8a43e9-ccc3-492c-bd33-839026a96d45)
+
+After routing everything, I made sure i had no critical errors by using KiCad's design rule checker (DRC for short). It revealed a ton of problems like unconnected grounds, traces, and more. Although some components were marked as too close to others, it was only by a little and i could safely ignore it.
+
+![image](https://github.com/user-attachments/assets/0bb56d30-c393-4b80-9bf8-0e8923adb3f5)
+
+![image](https://github.com/user-attachments/assets/95bb8321-62ed-454d-83b1-672675b4ce6b)
+
+I have no clue how i didn't notice this at all. I placed my sensor in the wrong place and only found out last second. It wasn't a pain to move though.
+
+![image](https://github.com/user-attachments/assets/a87f269d-1335-4bd0-a22c-23cade6d2a16)
+
+Here's the actual final final look of the pcb. It is amazing.
+
+**Total time spent: 3 hours**
