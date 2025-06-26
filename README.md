@@ -11,9 +11,9 @@ An expressive midi controller based on the stm32 ecosystem. It uses the MPE midi
  - Small key footprint for compactness
  - Two octaves + extra key before an octave
 
-# Accessibility
+# Why I Made It
 
-This controller will be able to make music more accessible by being more affordable to the typical person. Most MPE midi controllers on the market cost between [$500 USD to $2000](https://www.expressivee.com/2-osmose). 
+This controller will be able to make music more accessible by being more affordable to the typical person. Most MPE midi controllers on the market cost between [$500 USD to $2000](https://www.expressivee.com/2-osmose). I also made this project to touch the stm32 ecosystem and learn how to integrate and use it. I also need a midi keyboard for making music in Ableton.
 
 ![image](https://github.com/user-attachments/assets/fa9f4120-156a-4272-a7e7-c6c8a3e5700d)
 
