@@ -27,6 +27,12 @@ To reduce the cost of production, I decided to design a compliant mechanism (fle
 
 There were many problems while prototyping and laying out things. I had bare knowledge of how flexures worked and had to create as many prototypes as needed until the right movement was made. I also didn't know that the size of the board would be a big constraint that was completely ignored.
 
+# Wiring
+
+![image](https://github.com/user-attachments/assets/4aaa0f81-a04c-46bb-bf4a-90668fc7458c)
+![image](https://github.com/user-attachments/assets/6c7d2a6b-d729-48a6-98f4-0517bcc13cc6)
+![image](https://github.com/user-attachments/assets/2c60ebdc-f097-4882-bf1e-23de492c6ce5)
+
 # BOM
 This is an approximate bill of materials that is a little flexible. It would be around $333.27, ±5 dollars in case of shipping or extra taxes/fees.
 
