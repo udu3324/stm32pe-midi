@@ -5,6 +5,9 @@ description: "An affordable music keyboard that enables more expression through 
 created_at: "2025-06-06"
 ---
 
+**Total time taken: 54 hours**
+
+
 # June 6th: Sketching out the idea
 
 Today, I started researching the components that I would depend on. (stm32 ecosystem, i2c multiplexers, sensors) I then created some technical sketches of the device and drew some core concepts. 
