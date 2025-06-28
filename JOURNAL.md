@@ -5,7 +5,7 @@ description: "An affordable music keyboard that enables more expression through 
 created_at: "2025-06-06"
 ---
 
-**Total time taken: 54 hours**
+**Total time taken: 52 hours**
 
 
 # June 6th: Sketching out the idea
