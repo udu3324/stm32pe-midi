@@ -1,6 +1,6 @@
 # stm32pe-midi controller
 
-![image](https://github.com/user-attachments/assets/49a4342b-b016-45c9-b46f-4f4f7f76682d)
+![stm32pe-midi case v41](https://github.com/user-attachments/assets/fadfc3aa-1e23-4ed8-a343-4e25dc6622fd)
 
 An expressive midi controller based on the stm32 ecosystem. It uses the MPE midi protocol to pass through signals that act as gestures/effects including velocity/note to any music DAW. (like ableton)
 
@@ -13,7 +13,7 @@ An expressive midi controller based on the stm32 ecosystem. It uses the MPE midi
 
 # Why I Made It
 
-This controller will be able to make music more accessible by being more affordable to the typical person. Most MPE midi controllers on the market cost between [$500 USD to $2000](https://www.expressivee.com/2-osmose). I also made this project to touch the stm32 ecosystem and learn how to integrate and use it. I also need a midi keyboard for making music in Ableton.
+This controller will be able to make music more accessible by being more affordable to the typical person. Most MPE midi controllers on the market cost between [$500 USD to $2000](https://www.expressivee.com/2-osmose). I also made this project to touch the stm32 ecosystem and learn how to integrate and use it. This midi keyboard could also make my workflow nicer for making music in Ableton.
 
 ![image](https://github.com/user-attachments/assets/fa9f4120-156a-4272-a7e7-c6c8a3e5700d)
 
