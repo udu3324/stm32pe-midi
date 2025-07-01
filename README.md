@@ -34,7 +34,7 @@ There were many problems while prototyping and laying out things. I had bare kno
 ![image](https://github.com/user-attachments/assets/2c60ebdc-f097-4882-bf1e-23de492c6ce5)
 
 # BOM
-This is an approximate bill of materials that is a little flexible. It would be around $333.27, ±5 dollars in case of shipping or extra taxes/fees.
+This is an approximate bill of materials that is a little flexible. It would be around $333.27, ±5 dollars in case of shipping or extra taxes/fees. Thank you Hack Club - Highway for funding this.
 
 | Part                       | Cost         | Count | Supplier | Note                                                           | Link                                                                                            |
 |----------------------------|--------------|-------|----------|----------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
@@ -48,3 +48,12 @@ This is an approximate bill of materials that is a little flexible. It would be 
 | Customs duties & taxes     | $83.10       | n/a   | ~        |                                                                |                                                                                                 |
 | Sales Tax                  | $15.24       | n/a   | ~        |                                                                |                                                                                                 |
 | TOTAL                      | $333.27      |       |          |                                                                |                                                                                                 |
+
+I forgot to add two more parts to the bom. They have been covered out of pocket which is fine
+
+| Part                | Cost    | Count | Supplier | Note                                                | Link                                                                                                   |
+|---------------------|---------|-------|----------|-----------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| 5mm Cube Magnets    | $16.99  | 45    | Amazon   | I could not find any listings with lower quantities | [https://www.amazon.com/dp/B0CW9GVTX2](https://www.amazon.com/dp/B0CW9GVTX2)                           |
+| M3 5mm Screws       | ¥2.14   | 50    | Taobao   | Pretty cheap! (30 cents usd)                        | [https://detail.tmall.com/item.htm?id=722759297726](https://detail.tmall.com/item.htm?id=722759297726) |
+| Total out of pocket | $17.29  |       |          |                                                     |                                                                                                        |
+| REAL TOTAL          | $350.56 |       |          |                                                     |                                                                                                        |
