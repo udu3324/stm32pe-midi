@@ -287,3 +287,35 @@ I have no clue how i didn't notice this at all. I placed my sensor in the wrong 
 Here's the actual final final look of the pcb. It is amazing.
 
 **Total time spent: 3 hours**
+
+# July 7th: 3d-printing the Case
+
+![image](https://github.com/user-attachments/assets/0db859af-bacf-4a99-a2ae-63309275f82a)
+
+My 3d printer was a bit too small to actually print the entire case in one piece, so i instead designed a clip system to piece it together.
+
+![image](https://github.com/user-attachments/assets/9d049158-9270-468b-a362-87c050a98077)
+
+The first attempt was a bit too tight, so I used fusion 360's variable parameter features to easily change one number and retry.
+
+**Total time spent: 2 hours**
+
+# July 8th: Actually 3d printing the case and assembling it
+
+![image](https://github.com/user-attachments/assets/3b75b0dd-cb3b-4573-9ef7-fa2d3737fab6)
+
+It was perfect. I did some post processing to remove some strands as well as pla left behind by prusaslicer's ironing feature.
+
+I used the uv glue to keep everything together permanently. I repurposed a old uv nail lamp to cure the glue.
+
+**Total time spent: 3 hours**
+
+# July 9th: The boards have arrived!
+
+![image](https://github.com/user-attachments/assets/51c9a90c-b560-4112-9a94-e8af5f509300)
+
+The boards needed some preprocessing as well as some components had to be hand soldered on.
+
+I used a dremel to seperate the sensor board from the main board and tried my best not to breathe in any of the toxic fibers.
+
+**Total time spent: 5 hours**
