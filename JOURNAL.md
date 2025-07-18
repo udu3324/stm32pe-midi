@@ -288,6 +288,12 @@ Here's the actual final final look of the pcb. It is amazing.
 
 **Total time spent: 3 hours**
 
+# MILESTONE: MY PROJECT WAS SUBMITTED AND APPROVED HERE
+
+This log is to just seperate my prep and building phase.
+
+**Total time spent: 0 hours**
+
 # July 7th: 3d-printing the Case
 
 ![image](https://github.com/user-attachments/assets/0db859af-bacf-4a99-a2ae-63309275f82a)
@@ -319,3 +325,50 @@ The boards needed some preprocessing as well as some components had to be hand s
 I used a dremel to seperate the sensor board from the main board and tried my best not to breathe in any of the toxic fibers.
 
 **Total time spent: 5 hours**
+
+# July 10th: Soldering + 3d Printing More Stuff
+
+<img width="498" height="506" alt="image" src="https://github.com/user-attachments/assets/912c7280-c8f9-4c09-893f-784bca187018" />
+
+The board needed to have some male/female headers soldered on as well as buttons too. That was the easy part. I now needed to solder header wires to extremely small/close together pads on the right side. I ended up ripping a pad off while doing this somehow. 😭 Good thing JLCPCB has a minimum two PCBA boards so I can start over.
+
+I also printed most of the white keys and did some post processing of them. (removing some pla stuck to the sides of the print after the ironing stage)
+
+
+<img width="1000" height="528" alt="image" src="https://github.com/user-attachments/assets/4d703096-08a7-4922-9ee7-ee5a1cc07114" />
+
+I tried powering on the board but the power led was not on!!! There is no way i designed this to be nonfunctional. I whipped out my multimeter to see where voltage wasn't flowing, and saw that one of my safety capacitors for something was the main culprit.
+
+<img width="221" height="135" alt="image" src="https://github.com/user-attachments/assets/d9622835-3966-4d2a-800e-01705401f2ab" />
+
+I fucked up. I tried removing this with a soldering iron on my board thinking it would evenly melt both pads. It ripped one off. Good thing surface tension is a thing though, as it magically created a new pad for me and bridged them together.
+
+# July 11th: Time to go to Undercity!!!
+
+My project made me eligible to go to undercity!! It's my first time ever doing a hackathon so i am a bit nervous. 
+
+**Total time spent: 0 hours**
+
+# July 16th: Printing more stuff
+
+<img width="598" height="495" alt="image" src="https://github.com/user-attachments/assets/12275d82-f07c-4335-829a-f04c25b2f058" />
+
+I printed out the rest of my black keys. Nothing was done much today as i was still recovering from undercity lol.
+
+**Total time spent: 30 minutes**
+
+# July 17th: Fitting things together
+
+<img width="1148" height="324" alt="image" src="https://github.com/user-attachments/assets/86bce8a1-248f-4197-bd6e-8d8d6ae966d0" />
+
+My tolerances are... a bit too tight. In the picture above, you can see all of the white keys installed. They press fit together with the case, but do it too much. It caused the case to bend and overall make it a bit longer. This is horrible as there are also tolerances on the pcb which make it impossible to fit with an extra milimeter.
+
+I managed to fix this by sanding down some of the keys that seem too big.
+
+<img width="317" height="238" alt="image" src="https://github.com/user-attachments/assets/5d4626fe-747a-4307-9b08-d78765364ab1" />
+
+I bought the wrong size magnets. They should press fit in but its too loose and i am forced to super glue each and every one of them. I should have only printed one to see if the fit was perfect for the magnets i bought instead of the magnets i had on hand.
+
+**NOTE TO FUTURE SELF: print one thing at a time to see if it actually fits before printing/processing it all**
+
+For some reason though, there was a press fit on the black keys but not white. This is really strange as i am pretty sure both have the same dimension cut out.
