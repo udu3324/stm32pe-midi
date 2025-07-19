@@ -372,3 +372,17 @@ I bought the wrong size magnets. They should press fit in but its too loose and 
 **NOTE TO FUTURE SELF: print one thing at a time to see if it actually fits before printing/processing it all**
 
 For some reason though, there was a press fit on the black keys but not white. This is really strange as i am pretty sure both have the same dimension cut out.
+
+**Total time spent: 6 hours**
+
+# July 18th: It's finally built!! + starting on firmware
+
+<img width="1159" height="802" alt="image" src="https://github.com/user-attachments/assets/79936e72-c411-442e-9ba1-f927504a8486" />
+
+The tolerances were so tight. I did not add them all up and did not leave enough wiggle room for myself. It all worked out in the end though, as for some reason, all my leds are on without any code to trigger them. Nice.
+
+<img width="1881" height="940" alt="Screenshot 2025-07-18 200207" src="https://github.com/user-attachments/assets/d86ae589-b41b-4653-8331-a38e55153fe7" />
+
+I am using a combination of STM32's programmer and cube ide to get things started. The UI for setting things up is really nice, but I am still getting used to the workflow. 
+
+**Total time spent: 2 hours**
