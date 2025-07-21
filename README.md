@@ -51,9 +51,10 @@ This is an approximate bill of materials that is a little flexible. It would be 
 
 I forgot to add two more parts to the bom. They have been covered out of pocket which is fine
 
-| Part                | Cost    | Count | Supplier | Note                                                | Link                                                                                                   |
-|---------------------|---------|-------|----------|-----------------------------------------------------|--------------------------------------------------------------------------------------------------------|
-| 5mm Cube Magnets    | $16.99  | 45    | Amazon   | I could not find any listings with lower quantities | [https://www.amazon.com/dp/B0CW9GVTX2](https://www.amazon.com/dp/B0CW9GVTX2)                           |
-| M3 5mm Screws       | ¥2.14   | 50    | Taobao   | Pretty cheap! (30 cents usd)                        | [https://detail.tmall.com/item.htm?id=722759297726](https://detail.tmall.com/item.htm?id=722759297726) |
-| Total out of pocket | $17.29  |       |          |                                                     |                                                                                                        |
-| REAL TOTAL          | $350.56 |       |          |                                                     |                                                                                                        |
+| Part                  | Cost    | Count | Supplier | Note                                                                                    | Link                                                                                                   |
+|-----------------------|---------|-------|----------|-----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| 5mm Cube Magnets      | $16.99  | 45    | Amazon   | I could not find any listings with lower quantities                                     | [https://www.amazon.com/dp/B0CW9GVTX2](https://www.amazon.com/dp/B0CW9GVTX2)                           |
+| M3 5mm Screws         | ¥2.14   | 50    | Taobao   | Pretty cheap! (30 cents usd)                                                            | [https://detail.tmall.com/item.htm?id=722759297726](https://detail.tmall.com/item.htm?id=722759297726) |
+| JLCPCB Two Design Fee | $38.99  | n/a   | JLCPCB   | 😭 i did not think about this while designing, i tried negotiating and doing everything |                                                                                                        |
+| Total out of pocket   | $56.28  |       |          |                                                                                         |                                                                                                        |
+| REAL TOTAL            | $389.55 |       |          |                                                                                         |                                                                                                        |
