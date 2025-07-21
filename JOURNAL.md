@@ -386,3 +386,35 @@ The tolerances were so tight. I did not add them all up and did not leave enough
 I am using a combination of STM32's programmer and cube ide to get things started. The UI for setting things up is really nice, but I am still getting used to the workflow. 
 
 **Total time spent: 2 hours**
+
+# July 20th: Learning the ways of STM32CubeIDE/CubeMX 
+
+I have never coded c/cpp before, but do have java experience. It is a little different with c header files, but it all worked out okay in the end.
+
+<img width="789" height="397" alt="image" src="https://github.com/user-attachments/assets/050928e5-8b84-4977-95d1-f7bc9e315b95" />
+
+I was able to sucessfully implement my TLC5940 ics that multiplex all the LEDs for each keys. It was a pain as I really had no clue what i was doing, as well as the weird way i implemented them.
+
+<img width="1341" height="517" alt="image" src="https://github.com/user-attachments/assets/857a23f7-dd7a-4827-9f1c-9896f04fca85" />
+
+There are two ics connected together with both having a different amount of leds. It is such a weird implementation that took so much trial and error from both me and uhh.. ai.. to get to finally work. The most important helper function now is the premapped one which makes interaction with them extremely easy.
+
+```c
+void TLC5940_SetMappedLED(uint8_t logical_index, uint16_t brightness) {
+	static const uint8_t mapping_table[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+	uint8_t physical_index;
+
+	if (logical_index < 10) {
+		physical_index = mapping_table[logical_index];
+	} else if (logical_index >= 10 && logical_index <= 25) { // 10–25 to physical 16–31
+		physical_index = logical_index + 6;
+	} else {
+		return;
+	}
+
+	TLC5940_SetLED(physical_index, brightness);
+}
+```
+
+**Total time spent: 5 hours**
