@@ -365,9 +365,13 @@ My tolerances are... a bit too tight. In the picture above, you can see all of t
 
 I managed to fix this by sanding down some of the keys that seem too big.
 
+Also seen in the image above, some of the keys seem a little janky/bent. This is because I was postprocessing it and left it in a hot car.
+
+**Note to self: DO NOT LEAVE 3D PRINTS IN A CAR ON A HOT SUMMER DAY**
+
 <img width="317" height="238" alt="image" src="https://github.com/user-attachments/assets/5d4626fe-747a-4307-9b08-d78765364ab1" />
 
-I bought the wrong size magnets. They should press fit in but its too loose and i am forced to super glue each and every one of them. I should have only printed one to see if the fit was perfect for the magnets i bought instead of the magnets i had on hand.
+I bought the wrong size magnets. (also they seem kind of less strong but its ok i think) They should press fit in but its too loose and i am forced to super glue each and every one of them. I should have only printed one to see if the fit was perfect for the magnets i bought instead of the magnets i had on hand.
 
 **NOTE TO FUTURE SELF: print one thing at a time to see if it actually fits before printing/processing it all**
 
