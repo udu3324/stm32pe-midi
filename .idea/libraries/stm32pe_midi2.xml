@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="stm32pe_midi2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/pcb/stm32pe_midi/old1_production/stm32pe_midi.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

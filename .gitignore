@@ -1,0 +1,24 @@
+# STM32CubeIDE build output
+firmware/stm32pe_midi/Debug/
+firmware/stm32pe_midi/Release/
+firmware/stm32pe_midi/build/
+firmware/stm32pe_midi/*.elf
+firmware/stm32pe_midi/*.bin
+firmware/stm32pe_midi/*.hex
+firmware/stm32pe_midi/*.map
+firmware/stm32pe_midi/*.list
+firmware/stm32pe_midi/*.log
+
+# Temporary or local files
+firmware/stm32pe_midi/*.swp
+firmware/stm32pe_midi/*.tmp
+firmware/stm32pe_midi/*.swo
+firmware/stm32pe_midi/*.bak
+
+# System files
+firmware/stm32pe_midi/.DS_Store
+firmware/stm32pe_midi/Thumbs.db
+
+# OPTIONAL (ignore if you regenerate these via .ioc)
+# firmware/stm32pe_midi/Drivers/
+# firmware/stm32pe_midi/Middlewares/
