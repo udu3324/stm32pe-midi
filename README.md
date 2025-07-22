@@ -27,6 +27,11 @@ To reduce the cost of production, I decided to design a compliant mechanism (fle
 
 There were many problems while prototyping and laying out things. I had bare knowledge of how flexures worked and had to create as many prototypes as needed until the right movement was made. I also didn't know that the size of the board would be a big constraint that was completely ignored.
 
+# Firmware
+
+[i2c-mux stm32 lib](https://github.com/jtainer/i2c-mux) on BSD-2-Clause license
+
+
 # Wiring
 
 ![image](https://github.com/user-attachments/assets/4aaa0f81-a04c-46bb-bf4a-90668fc7458c)
