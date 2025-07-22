@@ -422,3 +422,9 @@ void TLC5940_SetMappedLED(uint8_t logical_index, uint16_t brightness) {
 ```
 
 **Total time spent: 5 hours**
+
+# July 21st: Initializing the TCA9548A
+
+I found a good [library](https://github.com/jtainer/i2c-mux) from jtainer that can handle my multiplexer for my i2c devices. The only problem now that i need to change the addresses on my TMAG5273s as they are all the same.
+
+**Total time spent: 2 hours**
