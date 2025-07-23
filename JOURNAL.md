@@ -428,3 +428,15 @@ void TLC5940_SetMappedLED(uint8_t logical_index, uint16_t brightness) {
 I found a good [library](https://github.com/jtainer/i2c-mux) from jtainer that can handle my multiplexer for my i2c devices. The only problem now that i need to change the addresses on my TMAG5273s as they are all the same.
 
 **Total time spent: 2 hours**
+
+# July 22nd: Getting the TMAG5273 to work
+
+I found a neat little [library](https://github.com/devOramaMan/stm32_TMAG5273) from devOramaMan that implements the hall effect sensor to work with the stm32 hal.
+
+I tried getting the y axis values and mapping it to my pwm leds, but of course, it did not work first try. I should have designed some sort of uart connection to my board but had to go with setting up a virtual com port device.
+
+<img width="927" height="530" alt="image" src="https://github.com/user-attachments/assets/54f27def-3053-404a-ab29-47e1f3b20257" />
+
+I had no clue what i was getting myself into. All these steps led me to this. It took so long troubleshooting why it didn't show up in my taskbar as a USB device. Turns out.. It shouldnt! It shows up only in device manager in a hidden dropdown that i didnt even know that existed.
+
+**Total time spent: 6 hours**
