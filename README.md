@@ -30,7 +30,7 @@ There were many problems while prototyping and laying out things. I had bare kno
 # Firmware
 
 [i2c-mux stm32 lib](https://github.com/jtainer/i2c-mux) on BSD-2-Clause license
-
+[stm32 tmag5273 lib](https://github.com/devOramaMan/stm32_TMAG5273) on No License
 
 # Wiring
 
