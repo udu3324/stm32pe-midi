@@ -440,3 +440,13 @@ I tried getting the y axis values and mapping it to my pwm leds, but of course, 
 I had no clue what i was getting myself into. All these steps led me to this. It took so long troubleshooting why it didn't show up in my taskbar as a USB device. Turns out.. It shouldnt! It shows up only in device manager in a hidden dropdown that i didnt even know that existed.
 
 **Total time spent: 6 hours**
+
+# July 23rd: TMAG5273 Pain
+
+I am now experiencing even more issues. Either I am not using the library correctly or i2c is running directly over the com port communications and interrupting anything from going through.
+
+There is a bunch of troubleshooting I've done that has gotten me little steps closer. I just have no clue what to do.
+
+Currently on this commit, everything just gives up and freezes on the `TMAG5273_Init(&tmag);` line. I am losing all my hairs.
+
+**Total time spent: 7 hours**

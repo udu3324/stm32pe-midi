@@ -25,7 +25,6 @@
 
 #include "usbd_def.h"
 #include "usbd_cdc_if.h"
-extern USBD_HandleTypeDef hUsbDeviceFS;
 
 #include <stdbool.h>
 #include <string.h>
@@ -33,11 +32,14 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 #include "i2c-mux.h"
 #include "TMAG5273.h"
 
-#define DEBUG_LED_GPIO_Port GPIOA
-#define DEBUG_LED_Pin GPIO_PIN_8
+#define DEBUG4_LED_GPIO_Port GPIOA
+#define DEBUG4_LED_Pin GPIO_PIN_8
 
 #define DEBUG2_LED_GPIO_Port GPIOA
 #define DEBUG2_LED_Pin GPIO_PIN_9
+
+#define DEBUG3_LED_GPIO_Port GPIOA
+#define DEBUG3_LED_Pin GPIO_PIN_10
 
 /* USER CODE END Includes */
 
@@ -67,6 +69,7 @@ TIM_HandleTypeDef htim2;
 /* USER CODE BEGIN PV */
 
 extern SPI_HandleTypeDef hspi1;
+extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE END PV */
 
@@ -142,78 +145,92 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 
 	//set mp-reset on the i2c multiplexer to be high as it is active-low reset input
-	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
 
 	//disable all i2c channels for a clean slate bruh
-	//if (i2c_mux_reset(&tca_mux) != 0) {
+	if (i2c_mux_reset(&tca_mux) != 0) {
 		// Handle error, e.g., blink LED or halt
-	//	HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_SET);
-	//}
+		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
+	}
 
 	// Example: select channel 6 on the mux to talk to sensors on SC6
-	//if (i2c_mux_select(&tca_mux, 6) != 0) {
-	//	HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_SET);
-	//}
+	if (i2c_mux_select(&tca_mux, 6) != 0) {
+		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
+	}
 
-	//uint8_t tmag_addr = 0x35 << 1;
-	//if (HAL_I2C_IsDeviceReady(&hi2c1, tmag_addr, 3, HAL_MAX_DELAY) != HAL_OK) {
-	//	HAL_GPIO_WritePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin, GPIO_PIN_SET);
-	//}
+	uint8_t tmag_addr = 0x35 << 1;
+	if (HAL_I2C_IsDeviceReady(&hi2c1, tmag_addr, 3, HAL_MAX_DELAY) != HAL_OK) {
+		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
+	}
 
 	// Setup TMAG5273 handle
-	//TMAG5273_Handle_t tmag;
-	//tmag.pI2c = &hi2c1;
-	//tmag.address = tmag_addr;
-	//tmag.crcEna = TMAG5273_CRC_DISABLE; // Enable if sensor config uses CRC
-
-	//TMAG5273_Init(&tmag);
+	TMAG5273_Handle_t tmag;
+	tmag.pI2c = &hi2c1;
+	tmag.address = tmag_addr;
+	tmag.crcEna = TMAG5273_CRC_DISABLE; // Enable if sensor config uses CRC
 
 	uint8_t testMessage[] = "Hello from STM32 over USB CDC!\r\n";
 
-	uint8_t testMessage2[] = "did it work\r\n";
-
 	/* Wait for USB to be fully configured */
-	//while (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) {
-	//	HAL_Delay(10);
-	//}
-
 	uint32_t timeout = HAL_GetTick() + 5000; // 5 seconds timeout
 
 	while (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) {
 		if (HAL_GetTick() > timeout) {
 			// Timeout: USB not configured, blink LED fast or stay off
-			HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
+			HAL_GPIO_TogglePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin);
 			HAL_Delay(100);
 		} else {
 			HAL_Delay(10);
 		}
 	}
-	HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin, GPIO_PIN_RESET);
 
 	HAL_Delay(2000);
+
+	bool tmag_initialized = false;
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	while (1) {
-		TLC5940_BreatheTest();
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+
+		if (!tmag_initialized && hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {
+			TMAG5273_Init(&tmag);
+			tmag_initialized = true;
+		}
+
+		//TLC5940_BreatheTest();
 
 		if (CDC_Transmit_FS(testMessage, strlen((char*) testMessage))
 				== USBD_OK) {
-			HAL_GPIO_TogglePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin);
+			HAL_GPIO_TogglePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin);
+		}
+
+		TMAG5273_Axis_t mag;  // holds Bx, By, Bz
+
+		if (TMAG5273_ReadMagneticField(&tmag, &mag) == 0) {
+			float bz = mag.Bz;
+			uint16_t bz_u16 = map_mT_to_u16(bz);
+
+			char message[64];  // Make sure it's big enough
+			snprintf(message, sizeof(message), "did it work %u", bz_u16);
+
+			if (CDC_Transmit_FS((uint8_t*) message, strlen(message))
+					== USBD_OK) {
+				HAL_GPIO_TogglePin(DEBUG4_LED_GPIO_Port, DEBUG4_LED_Pin);
+			}
+
+			TLC5940_SetMappedLED(9, bz_u16);
+			TLC5940_Update();
 		}
 
 		HAL_Delay(100);
-
-		if (CDC_Transmit_FS(testMessage2, strlen((char*) testMessage2))
-				== USBD_OK) {
-			HAL_GPIO_TogglePin(DEBUG_LED_GPIO_Port, DEBUG_LED_Pin);
-		}
-
-		HAL_Delay(100);
-	}
-
+  }
   /* USER CODE END 3 */
 }
 
@@ -509,6 +526,7 @@ void Error_Handler(void)
 	/* User can add his own implementation to report the HAL error return state */
 	__disable_irq();
 	while (1) {
+
 	}
   /* USER CODE END Error_Handler_Debug */
 }

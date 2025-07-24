@@ -111,6 +111,16 @@ inline uint8_t TMAG5273_WriteRegisters(TMAG5273_Handle_t *pHandle, uint8_t reg,
 inline uint8_t TMAG5273_WriteRegisterGeneral(TMAG5273_Handle_t *pHandle,
 		uint8_t reg, uint8_t data);
 
+#define DEBUG2_LED_GPIO_Port GPIOA
+#define DEBUG2_LED_Pin GPIO_PIN_9
+
+
+
+
+
+
+
+
 /* Global functions ----------------------------------------------------------*/
 
 /**
@@ -139,7 +149,11 @@ void TMAG5273_Init(TMAG5273_Handle_t *pHandle) {
 	if (TMAG5273_ReadRegisterStd(pHandle, DEVICE_ID, 1, &pHandle->deviceId)) {
 		int8_t adr = TMAG5273_SearchI2CAddress(pHandle);
 		if (!adr) {
-			Error_Handler();
+			//Error_Handler();
+			while (1) {
+				HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
+				HAL_Delay(100);
+			}
 		}
 
 		//Set the device address
@@ -147,16 +161,28 @@ void TMAG5273_Init(TMAG5273_Handle_t *pHandle) {
 		if (TMAG5273_ReadRegisterStd(pHandle, DEVICE_ID, 1,
 				&pHandle->deviceId)) {
 			Error_Handler();
+			while (1) {
+				HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
+				HAL_Delay(1000);
+			}
 		}
 	}
 
 	if (TMAG5273_ReadRegisterStd(pHandle, MANUFACTURER_ID_LSB, 1,
 			(uint8_t*) &pHandle->manufactorerId)) {
 		Error_Handler();
+		while (1) {
+			HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
+			HAL_Delay(5000);
+		}
 	}
 
 	if (TMAG5273_ReadRegisterStd(pHandle, MANUFACTURER_ID_MSB, 1, &val)) {
 		Error_Handler();
+		while (1) {
+			HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
+			HAL_Delay(1000);
+		}
 	}
 
 	//Expected Value 0x5449 (ref 7.6.1.15, 7.6.1.16 /doc/tmag5273.pdf)
