@@ -41,6 +41,9 @@
 #define DEBUG3_LED_GPIO_Port GPIOA
 #define DEBUG3_LED_Pin GPIO_PIN_10
 
+uint16_t light_key_arr[25] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -93,12 +96,14 @@ i2c_mux_t tca_mux = { .hi2c = &hi2c1,     // Using I2C1 on PB6 (SCL) / PB7 (SDA)
 		.addr_offset = 0            // 0 if all A0/A1/A2 pins are GND
 		};
 
-uint16_t map_mT_to_u16(float val) {
-	if (val < -50.0f)
-		val = -50.0f;
-	if (val > 50.0f)
-		val = 50.0f;
-	return (uint16_t) ((val + 50.0f) * 10.0f);  // Maps to 0–1000
+uint16_t map_float_to_uint16(float x, float in_min, float in_max,
+		uint16_t out_min, uint16_t out_max) {
+	if (x < in_min)
+		x = in_min;
+	if (x > in_max)
+		x = in_max;
+	return (uint16_t) (((x - in_min) * (out_max - out_min)) / (in_max - in_min)
+			+ out_min);
 }
 
 int _write(int file, char *ptr, int len) {
@@ -222,12 +227,11 @@ int main(void)
 
 		if (!tmag_initialized && hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {
 			TMAG5273_Init(&tmag);
-
 			tmag_initialized = true;
 		}
 
 		printf("Test 2\r\n");
-		printf("Test 3 - Device ID set as: 0x%02X\n", tmag.deviceId);
+		printf("Test 2.5 - Device ID set as: 0x%02X\n", tmag.deviceId);
 
 		for (uint8_t addr = 0x30; addr <= 0x3F; addr++) {
 			if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK) {
@@ -247,9 +251,6 @@ int main(void)
 		}
 
 		TMAG5273_Axis_t mag;  // holds Bx, By, Bz
-
-		TMAG5273_TriggerConversion(&tmag);
-		HAL_Delay(20);
 
 		// reading register data to test i2c device
 		uint8_t raw_data[6];
@@ -272,7 +273,8 @@ int main(void)
 					mag.By, mag.Bz);
 			//printf("Return value: %u\r\n", ret);
 
-			uint16_t bz_u16 = map_mT_to_u16(mag.Bz);
+			uint16_t bz_u16 = map_float_to_uint16(mag.Bz, 10.0f, 80.0f, 0,
+					3000);
 
 			TLC5940_SetMappedLED(9, bz_u16);
 			TLC5940_Update();
@@ -289,7 +291,7 @@ int main(void)
 		}
 
 
-		HAL_Delay(100);
+		//HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
