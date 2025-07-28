@@ -177,11 +177,14 @@ int main(void)
 			.magTempcoMode = TMAG5273_NO_MAG_TEMPCO, .convAvgMode =
 					TMAG5273_CONV_AVG_32X, .readMode =
 					TMAG5273_READ_MODE_STANDARD, .lplnMode = TMAG5273_LOW_NOISE,
-			.operatingMode = TMAG5273_OPERATING_MODE_STANDBY, .magXYRange =
+			.operatingMode = TMAG5273_OPERATING_MODE_STANDBY,
+			.magXYRange =
+					TMAG5273_MAG_RANGE_40MT_133MT,
+			.magZRange = TMAG5273_MAG_RANGE_40MT_133MT, .magXYRange =
 					TMAG5273_MAG_RANGE_40MT_133MT, .magZRange =
 					TMAG5273_MAG_RANGE_80MT_266MT, .tempChEn =
-					TMAG5273_TEMP_CH_DISABLED, .angEn = TMAG5273_ANG_X_Y,
-			.magChEn = TMAG5276_MAG_X_Y_Z, .crcEna = TMAG5273_CRC_DISABLE,
+					TMAG5273_TEMP_CH_DISABLED, .angEn = TMAG5273_ANG_X_Z,
+			.magChEn = TMAG5276_MAG_Z_X, .crcEna = TMAG5273_CRC_DISABLE,
 			.sensor_id =
 					0, .sleep = TMAG5276_10MS };
 
@@ -219,8 +222,6 @@ int main(void)
 
 		if (!tmag_initialized && hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {
 			TMAG5273_Init(&tmag);
-
-			HAL_Delay(20);
 
 			tmag_initialized = true;
 		}
@@ -276,6 +277,17 @@ int main(void)
 			TLC5940_SetMappedLED(9, bz_u16);
 			TLC5940_Update();
 		}
+
+		// reading rotation from sensor
+		TMAG5273_Angle_t angle;
+		ret = TMAG5273_ReadAngle(&tmag, &angle);
+		if (ret == 0) {
+			printf("Angle: %.2f deg, Magnitude: %.2f\r\n", angle.angle,
+					angle.magnitude);
+		} else {
+			printf("Failed to read angle, code: %d\r\n", ret);
+		}
+
 
 		HAL_Delay(100);
   }
