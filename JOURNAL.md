@@ -450,3 +450,35 @@ There is a bunch of troubleshooting I've done that has gotten me little steps cl
 Currently on this commit, everything just gives up and freezes on the `TMAG5273_Init(&tmag);` line. I am losing all my hairs.
 
 **Total time spent: 7 hours**
+
+# July 24th: A light from the dark
+
+<img width="862" height="322" alt="image" src="https://github.com/user-attachments/assets/2c3403df-9ab4-4fd6-b0f5-bd3ec7d194d0" />
+
+I have found a discord server dedicated to the stm32 ecosystem. I immediately wrote a forum post to them about my issue, being very informative as possible. A kind person gave me the best resource I've ever seen.
+
+[stm32world.com](https://stm32world.com/wiki/Serial_Debugging)
+
+Turns out, something was wrong with me casually writing to cdc everytime to send a debug message over. Instead, they have a nice cookie cutter function that replaces `printf()` to make my debugging actually work. A huge thanks to their community.
+
+I can now focus on my original problem of getting my i2c sensor device to be recognized and parsed. (foreshadowing: it was painful)
+
+**Total time spent: 2 hours**
+
+# July 27th: Finally getting my hall effect sensors working
+
+<img width="1386" height="706" alt="image" src="https://github.com/user-attachments/assets/da3df190-1438-42aa-9c25-3f20d84abae2" />
+
+It took so much trial and error to get **one** sensor working. Turns out, the library I use had some problems with the device id. (in TMAG5273_ReadMagneticField) I don't have  much experience in i2c devices, and i also kind of have a deadline, so i resulted to using two AIs to help me solve this issue.
+
+It took me about 15+ chats on chatgpt, 50+ lines of debugging, and a switch to Github Copilot to give better context. The final result was about 10 lines of code to fix the external library I found.
+
+I can finally now move onto trying to rewrite the addresses of each tmag as they aren't unique and will cause i2c communication conficts.
+
+<img width="297" height="674" alt="image" src="https://github.com/user-attachments/assets/fb53c63e-e331-41a6-b4b5-37c3fbe487c1" />
+
+I bought all of the A1 models which have all the same address. I read in the datasheet originally that they were editable so i thought it was fine, but i think it might be a bit hard. It also is a money saving technique i used as each model would count as an extended part, about 4+ usd for each model.
+
+Why did Texas Instruments design their sensors like this? 
+
+**Total time spent: 6 hours**
