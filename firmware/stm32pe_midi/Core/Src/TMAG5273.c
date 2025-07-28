@@ -151,6 +151,7 @@ void TMAG5273_Init(TMAG5273_Handle_t *pHandle) {
 		if (!adr) {
 			//Error_Handler();
 			while (1) {
+				printf("error 1\r\n");
 				HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
 				HAL_Delay(100);
 			}
@@ -160,8 +161,9 @@ void TMAG5273_Init(TMAG5273_Handle_t *pHandle) {
 		pHandle->address = adr;
 		if (TMAG5273_ReadRegisterStd(pHandle, DEVICE_ID, 1,
 				&pHandle->deviceId)) {
-			Error_Handler();
+			//Error_Handler();
 			while (1) {
+				printf("error 2\r\n");
 				HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
 				HAL_Delay(1000);
 			}
@@ -170,16 +172,18 @@ void TMAG5273_Init(TMAG5273_Handle_t *pHandle) {
 
 	if (TMAG5273_ReadRegisterStd(pHandle, MANUFACTURER_ID_LSB, 1,
 			(uint8_t*) &pHandle->manufactorerId)) {
-		Error_Handler();
+		//Error_Handler();
 		while (1) {
+			printf("error 3\r\n");
 			HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
 			HAL_Delay(5000);
 		}
 	}
 
 	if (TMAG5273_ReadRegisterStd(pHandle, MANUFACTURER_ID_MSB, 1, &val)) {
-		Error_Handler();
+		//Error_Handler();
 		while (1) {
+			printf("error 4\r\n");
 			HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
 			HAL_Delay(1000);
 		}
@@ -337,6 +341,17 @@ float TMAG5273_ReadTemperature(TMAG5273_Handle_t *pHandle) {
 	return 0.0;
 }
 
+int TMAG5273_map_dev_id(uint8_t raw_id) {
+	switch (raw_id) {
+	case 0x05:
+		return 1; // 40/80mT
+	case 0x0A:
+		return 2; // 133/266mT
+	default:
+		return 1;   // fallback to 40/80mT
+	}
+}
+
 /**
  * @brief TMAG5273_ReadMagneticField - Read Magnetic Fields 7.5.2.1
  * NB - doesn't check conversion status (like TMAG5273_ReadSensorData)
@@ -348,6 +363,10 @@ uint8_t TMAG5273_ReadMagneticField(TMAG5273_Handle_t *pHandle,
 		TMAG5273_Axis_t *axis) {
 	uint8_t ret;
 	uint8_t msg = (uint8_t) X_MSB_RESULT;
+
+	//printf("deviceId: %d, magXYRange: %d, scale: %f\n", pHandle->deviceId, pHandle->magXYRange, TMAG5273_RANGE[pHandle->deviceId][pHandle->magXYRange]);
+
+	int dev_idx = TMAG5273_map_dev_id(pHandle->deviceId);
 
 	if (pHandle->magChEn == TMAG5276_MAG_All_OFF)
 		return TMAG_ERR;
@@ -372,11 +391,11 @@ uint8_t TMAG5273_ReadMagneticField(TMAG5273_Handle_t *pHandle,
 
 		//Ref 7.5.2.1 Magnetic Sensor Data (16 bit eq 10)
 		axis->Bx = (((float) pHandle->raw[0]) / 32768.f)
-				* TMAG5273_RANGE[pHandle->deviceId][pHandle->magXYRange];
+				* TMAG5273_RANGE[dev_idx][pHandle->magXYRange];
 		axis->By = (((float) pHandle->raw[1]) / 32768.f)
-				* TMAG5273_RANGE[pHandle->deviceId][pHandle->magXYRange];
+				* TMAG5273_RANGE[dev_idx][pHandle->magXYRange];
 		axis->Bz = (((float) pHandle->raw[2]) / 32768.f)
-				* TMAG5273_RANGE[pHandle->deviceId][pHandle->magZRange];
+				* TMAG5273_RANGE[dev_idx][pHandle->magZRange];
 	}
 	return ret;
 }

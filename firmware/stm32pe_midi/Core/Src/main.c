@@ -101,6 +101,15 @@ uint16_t map_mT_to_u16(float val) {
 	return (uint16_t) ((val + 50.0f) * 10.0f);  // Maps to 0–1000
 }
 
+int _write(int file, char *ptr, int len) {
+	uint8_t status;
+	while ((status = CDC_Transmit_FS((uint8_t*) ptr, len)) != HAL_OK) {
+		if (status == HAL_ERROR)
+			return 0; // Should prevent "hanging"
+	}
+	return len;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -163,13 +172,20 @@ int main(void)
 		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
 	}
 
-	// Setup TMAG5273 handle
-	TMAG5273_Handle_t tmag;
-	tmag.pI2c = &hi2c1;
-	tmag.address = tmag_addr;
-	tmag.crcEna = TMAG5273_CRC_DISABLE; // Enable if sensor config uses CRC
+	TMAG5273_Handle_t tmag = { .pI2c = &hi2c1,
+			.address = 0x35, // 0x41
+			.magTempcoMode = TMAG5273_NO_MAG_TEMPCO, .convAvgMode =
+					TMAG5273_CONV_AVG_32X, .readMode =
+					TMAG5273_READ_MODE_STANDARD, .lplnMode = TMAG5273_LOW_NOISE,
+			.operatingMode = TMAG5273_OPERATING_MODE_STANDBY, .magXYRange =
+					TMAG5273_MAG_RANGE_40MT_133MT, .magZRange =
+					TMAG5273_MAG_RANGE_80MT_266MT, .tempChEn =
+					TMAG5273_TEMP_CH_DISABLED, .angEn = TMAG5273_ANG_X_Y,
+			.magChEn = TMAG5276_MAG_X_Y_Z, .crcEna = TMAG5273_CRC_DISABLE,
+			.sensor_id =
+					0, .sleep = TMAG5276_10MS };
 
-	uint8_t testMessage[] = "Hello from STM32 over USB CDC!\r\n";
+	//uint8_t testMessage[] = "Hello from STM32 over USB CDC!\r\n";
 
 	/* Wait for USB to be fully configured */
 	uint32_t timeout = HAL_GetTick() + 5000; // 5 seconds timeout
@@ -199,31 +215,63 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+		printf("Test 1\r\n");
+
 		if (!tmag_initialized && hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {
 			TMAG5273_Init(&tmag);
+
+			HAL_Delay(20);
+
 			tmag_initialized = true;
+		}
+
+		printf("Test 2\r\n");
+		printf("Test 3 - Device ID set as: 0x%02X\n", tmag.deviceId);
+
+		for (uint8_t addr = 0x30; addr <= 0x3F; addr++) {
+			if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK) {
+				printf("Found device at 0x%02X\n", addr);
+			}
 		}
 
 		//TLC5940_BreatheTest();
 
-		if (CDC_Transmit_FS(testMessage, strlen((char*) testMessage))
-				== USBD_OK) {
-			HAL_GPIO_TogglePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin);
+		printf("Test 3\r\n");
+
+		uint8_t id;
+		if (TMAG5273_ReadRegister(&tmag, DEVICE_ID, 1, &id) == 0) {
+			printf("Device ID: 0x%02X\n", id);
+		} else {
+			printf("Failed to read Device ID\n");
 		}
 
 		TMAG5273_Axis_t mag;  // holds Bx, By, Bz
 
-		if (TMAG5273_ReadMagneticField(&tmag, &mag) == 0) {
-			float bz = mag.Bz;
-			uint16_t bz_u16 = map_mT_to_u16(bz);
+		TMAG5273_TriggerConversion(&tmag);
+		HAL_Delay(20);
 
-			char message[64];  // Make sure it's big enough
-			snprintf(message, sizeof(message), "did it work %u", bz_u16);
-
-			if (CDC_Transmit_FS((uint8_t*) message, strlen(message))
-					== USBD_OK) {
-				HAL_GPIO_TogglePin(DEBUG4_LED_GPIO_Port, DEBUG4_LED_Pin);
+		// reading register data to test i2c device
+		uint8_t raw_data[6];
+		if (TMAG5273_ReadRegister(&tmag, X_MSB_RESULT, 6, raw_data) == 0) {
+			printf("Raw register data: ");
+			for (int i = 0; i < 6; i++) {
+				printf("0x%02X ", raw_data[i]);
 			}
+			printf("\r\n");
+		} else {
+			printf("Failed to read raw register data\r\n");
+		}
+
+		// reading sensor to output led/etc.
+		uint8_t ret = TMAG5273_ReadMagneticField(&tmag, &mag);
+		if (ret != 0) {
+			printf("ReadMagneticField failed with code %d\r\n", ret);
+		} else {
+			printf("Bx = %.3f mT, By = %.3f mT, Bz = %.3f mT\r\n", mag.Bx,
+					mag.By, mag.Bz);
+			//printf("Return value: %u\r\n", ret);
+
+			uint16_t bz_u16 = map_mT_to_u16(mag.Bz);
 
 			TLC5940_SetMappedLED(9, bz_u16);
 			TLC5940_Update();
