@@ -499,4 +499,4 @@ I finally got midi to be generated from my board!!! But.. It is inconsistant.
 
 Turns out, the midi test function i used has a hal_delay which runs in the func > while loop > main.c which blocks all other things from running. It was fixed by using the HAL ticking function to avoid sleeping.
 
-**Total time spent: 4 hours**
+**Total time spent: 5 hours**

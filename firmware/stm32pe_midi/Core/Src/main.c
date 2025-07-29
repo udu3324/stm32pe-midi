@@ -18,19 +18,21 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "usbd_def.h"
-#include "usbd_cdc_if.h"
+//#include "usbd_def.h"
+//#include "usbd_cdc_if.h"
 
 #include <stdbool.h>
 #include <string.h>
+
 #include "tlc5940.h"
 #include "i2c-mux.h"
 #include "TMAG5273.h"
+
+#include "tusb.h"
 
 #define DEBUG4_LED_GPIO_Port GPIOA
 #define DEBUG4_LED_Pin GPIO_PIN_8
@@ -69,10 +71,12 @@ SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
 
+PCD_HandleTypeDef hpcd_USB_OTG_FS;
+
 /* USER CODE BEGIN PV */
 
 extern SPI_HandleTypeDef hspi1;
-extern USBD_HandleTypeDef hUsbDeviceFS;
+//extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE END PV */
 
@@ -83,6 +87,7 @@ static void MX_GPIO_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_USB_OTG_FS_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -106,13 +111,57 @@ uint16_t map_float_to_uint16(float x, float in_min, float in_max,
 			+ out_min);
 }
 
-int _write(int file, char *ptr, int len) {
-	uint8_t status;
-	while ((status = CDC_Transmit_FS((uint8_t*) ptr, len)) != HAL_OK) {
-		if (status == HAL_ERROR)
-			return 0; // Should prevent "hanging"
+//int _write(int file, char *ptr, int len) {
+//	uint8_t status;
+//	while ((status = CDC_Transmit_FS((uint8_t*) ptr, len)) != HAL_OK) {
+//		if (status == HAL_ERROR)
+//			return 0; // Should prevent "hanging"
+//	}
+//	return len;
+//}
+
+// Variable that holds the current position in the sequence.
+uint32_t note_pos = 0;
+
+// Store example melody as an array of note values
+const uint8_t note_sequence[] = { 74, 78, 81, 86, 90, 93, 98, 102, 57, 61, 66,
+		69, 73, 78, 81, 85, 88, 92, 97, 100, 97, 92, 88, 85, 81, 78, 74, 69, 66,
+		62, 57, 62, 66, 69, 74, 78, 81, 86, 90, 93, 97, 102, 97, 93, 90, 85, 81,
+		78, 73, 68, 64, 61, 56, 61, 64, 68, 74, 78, 81, 86, 90, 93, 98, 102 };
+
+void midi_task(void) {
+	static int note_pos = 0;
+	static uint32_t last_tick = 0;
+	uint8_t const cable_num = 0;
+	uint8_t const channel = 0;
+
+	// Only send MIDI if enough time has passed
+	uint32_t now = HAL_GetTick();
+	if (now - last_tick < 286)
+		return;
+	last_tick = now;
+
+	// Clear any received MIDI data
+	while (tud_midi_available()) {
+		uint8_t packet[4];
+		tud_midi_packet_read(packet);
 	}
-	return len;
+
+	// Send Note On for current note
+	uint8_t note_on[3] = { 0x90 | channel, note_sequence[note_pos], 127 };
+	tud_midi_stream_write(cable_num, note_on, 3);
+
+	// Send Note Off for previous note
+	int previous =
+			(note_pos == 0) ? (sizeof(note_sequence) - 1) : (note_pos - 1);
+	uint8_t note_off[3] = { 0x80 | channel, note_sequence[previous], 0 };
+	tud_midi_stream_write(cable_num, note_off, 3);
+
+	// Advance note position, wrap around
+	note_pos++;
+	if (note_pos >= sizeof(note_sequence)) {
+		note_pos = 0;
+	}
 }
 
 /* USER CODE END 0 */
@@ -152,7 +201,7 @@ int main(void)
   MX_TIM2_Init();
   MX_SPI1_Init();
   MX_I2C1_Init();
-  MX_USB_DEVICE_Init();
+  MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
 
 	// start the timer for the multiplexer ic for the leds
@@ -166,6 +215,9 @@ int main(void)
 		// Handle error, e.g., blink LED or halt
 		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
 	}
+
+	// init device stack for tiny usb!!!
+	tusb_init(BOARD_DEVICE_RHPORT_NUM, NULL);
 
 	// Example: select channel 6 on the mux to talk to sensors on SC6
 	if (i2c_mux_select(&tca_mux, 6) != 0) {
@@ -196,20 +248,20 @@ int main(void)
 	//uint8_t testMessage[] = "Hello from STM32 over USB CDC!\r\n";
 
 	/* Wait for USB to be fully configured */
-	uint32_t timeout = HAL_GetTick() + 5000; // 5 seconds timeout
+	//uint32_t timeout = HAL_GetTick() + 5000; // 5 seconds timeout
 
-	while (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) {
-		if (HAL_GetTick() > timeout) {
+	//while (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) {
+	//	if (HAL_GetTick() > timeout) {
 			// Timeout: USB not configured, blink LED fast or stay off
-			HAL_GPIO_TogglePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin);
-			HAL_Delay(100);
-		} else {
-			HAL_Delay(10);
-		}
-	}
-	HAL_GPIO_WritePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin, GPIO_PIN_RESET);
+	//		HAL_GPIO_TogglePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin);
+	//		HAL_Delay(100);
+	//	} else {
+	//		HAL_Delay(10);
+	//	}
+	//}
+	//HAL_GPIO_WritePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin, GPIO_PIN_RESET);
 
-	HAL_Delay(2000);
+	//HAL_Delay(2000);
 
 	bool tmag_initialized = false;
 
@@ -223,9 +275,13 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+		tud_task();
+
+		//TLC5940_BreatheTest();
+
 		printf("Test 1\r\n");
 
-		if (!tmag_initialized && hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {
+		if (!tmag_initialized) { // && hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED
 			TMAG5273_Init(&tmag);
 			tmag_initialized = true;
 		}
@@ -238,8 +294,6 @@ int main(void)
 				printf("Found device at 0x%02X\n", addr);
 			}
 		}
-
-		//TLC5940_BreatheTest();
 
 		printf("Test 3\r\n");
 
@@ -290,6 +344,7 @@ int main(void)
 			printf("Failed to read angle, code: %d\r\n", ret);
 		}
 
+		midi_task();
 
 		//HAL_Delay(100);
   }
@@ -498,6 +553,42 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/**
+  * @brief USB_OTG_FS Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USB_OTG_FS_PCD_Init(void)
+{
+
+  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
+
+  /* USER CODE END USB_OTG_FS_Init 0 */
+
+  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
+
+  /* USER CODE END USB_OTG_FS_Init 1 */
+  hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
+  hpcd_USB_OTG_FS.Init.dev_endpoints = 9;
+  hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
+  hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
+  hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.battery_charging_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
+  if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
+
+  /* USER CODE END USB_OTG_FS_Init 2 */
 
 }
 
