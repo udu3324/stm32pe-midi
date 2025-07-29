@@ -482,3 +482,13 @@ I bought all of the A1 models which have all the same address. I read in the dat
 Why did Texas Instruments design their sensors like this? 
 
 **Total time spent: 6 hours**
+
+# July 28th: Working on midi protocol
+
+I did further research and found out that I bricked my own board. I can't rewrite the tmag's address as it will be targeting all of the i2c devices of that same address, and will overwrite the ones that I don't want. Welp, that sucks.
+
+I decided to work on the midi instead and implemented [TinyUSB](https://github.com/hathach/tinyusb) to help me turn it into a recognizable midi device.
+
+This [github discussion](https://github.com/hathach/tinyusb/discussions/633) was a massive help in doing it, and it was pretty easy compared to writing my own custom device class implementation. Although, I should probably learn it the hard way for the future.
+
+**Total time spent: 4 hours**
