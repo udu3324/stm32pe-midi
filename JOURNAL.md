@@ -491,4 +491,12 @@ I decided to work on the midi instead and implemented [TinyUSB](https://github.c
 
 This [github discussion](https://github.com/hathach/tinyusb/discussions/633) was a massive help in doing it, and it was pretty easy compared to writing my own custom device class implementation through [HAL](https://electronics.stackexchange.com/a/546927). Although, I should probably learn it the hard way for the future.
 
+<img width="1467" height="691" alt="image" src="https://github.com/user-attachments/assets/ba343496-b677-4e15-94fb-0d8f0e46e9b7" />
+
+I finally got midi to be generated from my board!!! But.. It is inconsistant.
+
+<img width="1409" height="734" alt="image" src="https://github.com/user-attachments/assets/3e967cae-36d3-41f4-83fd-946aa37284aa" />
+
+Turns out, the midi test function i used has a hal_delay which runs in the func > while loop > main.c which blocks all other things from running. It was fixed by using the HAL ticking function to avoid sleeping.
+
 **Total time spent: 4 hours**
