@@ -111,14 +111,32 @@ uint16_t map_float_to_uint16(float x, float in_min, float in_max,
 			+ out_min);
 }
 
-//int _write(int file, char *ptr, int len) {
-//	uint8_t status;
-//	while ((status = CDC_Transmit_FS((uint8_t*) ptr, len)) != HAL_OK) {
-//		if (status == HAL_ERROR)
-//			return 0; // Should prevent "hanging"
-//	}
-//	return len;
-//}
+int _write(int file, char *ptr, int len) {
+	(void) file;
+
+	if (!tud_cdc_connected()) {
+		return 0;
+	}
+
+	int remaining = len;
+	uint32_t start = HAL_GetTick();
+	while (remaining > 0) {
+		uint32_t n = tud_cdc_write(ptr, remaining);
+		tud_cdc_write_flush(); // send data to host
+		ptr += n;
+		remaining -= n;
+
+		// Allow TinyUSB to process USB events
+		tud_task();
+
+		// Timeout after 100ms to avoid deadlock
+		if ((HAL_GetTick() - start) > 100) {
+			break;
+		}
+	}
+
+	return len;
+}
 
 // Variable that holds the current position in the sequence.
 uint32_t note_pos = 0;
@@ -245,24 +263,6 @@ int main(void)
 			.sensor_id =
 					0, .sleep = TMAG5276_10MS };
 
-	//uint8_t testMessage[] = "Hello from STM32 over USB CDC!\r\n";
-
-	/* Wait for USB to be fully configured */
-	//uint32_t timeout = HAL_GetTick() + 5000; // 5 seconds timeout
-
-	//while (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) {
-	//	if (HAL_GetTick() > timeout) {
-			// Timeout: USB not configured, blink LED fast or stay off
-	//		HAL_GPIO_TogglePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin);
-	//		HAL_Delay(100);
-	//	} else {
-	//		HAL_Delay(10);
-	//	}
-	//}
-	//HAL_GPIO_WritePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin, GPIO_PIN_RESET);
-
-	//HAL_Delay(2000);
-
 	bool tmag_initialized = false;
 
   /* USER CODE END 2 */
@@ -277,54 +277,55 @@ int main(void)
 
 		tud_task();
 
-		//TLC5940_BreatheTest();
+		//TLC5940_BreatheAllTest();
+		//continue;
 
-		printf("Test 1\r\n");
+		//printf("Test 1\r\n");
 
 		if (!tmag_initialized) { // && hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED
 			TMAG5273_Init(&tmag);
 			tmag_initialized = true;
 		}
 
-		printf("Test 2\r\n");
-		printf("Test 2.5 - Device ID set as: 0x%02X\n", tmag.deviceId);
+		//printf("Test 2\r\n");
+		//printf("Test 2.5 - Device ID set as: 0x%02X\n", tmag.deviceId);
 
-		for (uint8_t addr = 0x30; addr <= 0x3F; addr++) {
-			if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK) {
-				printf("Found device at 0x%02X\n", addr);
-			}
-		}
+		//for (uint8_t addr = 0x30; addr <= 0x3F; addr++) {
+		//	if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK) {
+		//		printf("Found device at 0x%02X\n", addr);
+		//	}
+		//}
 
-		printf("Test 3\r\n");
+		//printf("Test 3\r\n");
 
-		uint8_t id;
-		if (TMAG5273_ReadRegister(&tmag, DEVICE_ID, 1, &id) == 0) {
-			printf("Device ID: 0x%02X\n", id);
-		} else {
-			printf("Failed to read Device ID\n");
-		}
-
-		TMAG5273_Axis_t mag;  // holds Bx, By, Bz
+		//uint8_t id;
+		//if (TMAG5273_ReadRegister(&tmag, DEVICE_ID, 1, &id) == 0) {
+		//	printf("Device ID: 0x%02X\n", id);
+		//} else {
+		//	printf("Failed to read Device ID\n");
+		//}
 
 		// reading register data to test i2c device
-		uint8_t raw_data[6];
-		if (TMAG5273_ReadRegister(&tmag, X_MSB_RESULT, 6, raw_data) == 0) {
-			printf("Raw register data: ");
-			for (int i = 0; i < 6; i++) {
-				printf("0x%02X ", raw_data[i]);
-			}
-			printf("\r\n");
-		} else {
-			printf("Failed to read raw register data\r\n");
-		}
+		//uint8_t raw_data[6];
+		//if (TMAG5273_ReadRegister(&tmag, X_MSB_RESULT, 6, raw_data) == 0) {
+		//	printf("Raw register data: ");
+		//	for (int i = 0; i < 6; i++) {
+		//		printf("0x%02X ", raw_data[i]);
+		//	}
+		//	printf("\r\n");
+		//} else {
+		//	printf("Failed to read raw register data\r\n");
+		//}
 
 		// reading sensor to output led/etc.
+		TMAG5273_Axis_t mag;
 		uint8_t ret = TMAG5273_ReadMagneticField(&tmag, &mag);
 		if (ret != 0) {
 			printf("ReadMagneticField failed with code %d\r\n", ret);
 		} else {
-			printf("Bx = %.3f mT, By = %.3f mT, Bz = %.3f mT\r\n", mag.Bx,
-					mag.By, mag.Bz);
+			//printf("Bx = %.3f mT, By = %.3f mT, Bz = %.3f mT\r\n", mag.Bx, mag.By, mag.Bz);
+			//printf("Bz = %.3f mT\r\n", mag.Bz);
+
 			//printf("Return value: %u\r\n", ret);
 
 			uint16_t bz_u16 = map_float_to_uint16(mag.Bz, 10.0f, 80.0f, 0,
@@ -338,11 +339,14 @@ int main(void)
 		TMAG5273_Angle_t angle;
 		ret = TMAG5273_ReadAngle(&tmag, &angle);
 		if (ret == 0) {
-			printf("Angle: %.2f deg, Magnitude: %.2f\r\n", angle.angle,
-					angle.magnitude);
+			//printf("Angle: %.2f deg, Magnitude: %.2f\r\n", angle.angle, angle.magnitude);
+			//printf("Angle: %.2f deg\r\n", angle.angle);
 		} else {
 			printf("Failed to read angle, code: %d\r\n", ret);
 		}
+
+		printf("Bz = %.3f mT, Angle: %.2f deg\r\n", mag.Bz, angle.angle);
+		//min 24, max 80
 
 		midi_task();
 
