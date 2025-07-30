@@ -25,6 +25,7 @@
 //#include "usbd_def.h"
 //#include "usbd_cdc_if.h"
 
+#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -43,8 +44,16 @@
 #define DEBUG3_LED_GPIO_Port GPIOA
 #define DEBUG3_LED_Pin GPIO_PIN_10
 
+//in order of sharps/flats/black keys left-right, to bottom row white keys left-right
 uint16_t light_key_arr[25] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+//in order of b, c, c#, d, etc..
+bool key_activated[25];
+float key_velocity_time[25];
+float key_dist_change[25];
+
+float key_dist_max[25];
 
 /* USER CODE END Includes */
 
@@ -108,6 +117,16 @@ uint16_t map_float_to_uint16(float x, float in_min, float in_max,
 	if (x > in_max)
 		x = in_max;
 	return (uint16_t) (((x - in_min) * (out_max - out_min)) / (in_max - in_min)
+			+ out_min);
+}
+
+uint8_t map_float_to_uint8(float x, float in_min, float in_max, uint8_t out_min,
+		uint8_t out_max) {
+	if (x < in_min)
+		x = in_min;
+	if (x > in_max)
+		x = in_max;
+	return (uint8_t) (((x - in_min) * (out_max - out_min)) / (in_max - in_min)
 			+ out_min);
 }
 
@@ -345,10 +364,43 @@ int main(void)
 			printf("Failed to read angle, code: %d\r\n", ret);
 		}
 
-		printf("Bz = %.3f mT, Angle: %.2f deg\r\n", mag.Bz, angle.angle);
-		//min 24, max 80
+		float current_change = abs(mag.Bz - key_dist_change[23]);
+		printf("Bz = %.3f mT, Angle: %.2f deg, Change: %.2f, Max: %.2f\r\n",
+				mag.Bz, angle.angle, current_change,
+				key_dist_max[23]);
+		//min 24mT, max 80mT
 
-		midi_task();
+		//save the velocity to a variable if the key distance change is more than before
+		if (key_dist_max[23] < current_change) {
+			key_dist_max[23] = current_change;
+			//varies between ~2 - 8
+		}
+
+		//turn off key
+		if (mag.Bz < 24 && key_activated[23]) {
+			uint8_t note_off[3] = { 0x80 | 0, 70, 0 };
+			tud_midi_stream_write(0, note_off, 3);
+
+			key_activated[23] = false;
+
+			//reset velocity measurement
+			key_dist_max[23] = 0;
+		}
+
+		//turn on key
+		if (mag.Bz > 78 && !key_activated[23]) {
+			uint8_t measured_velocity = map_float_to_uint16(key_dist_max[23],
+					2.0f, 8.0f, 20, 127);
+			uint8_t note_on[3] = { 0x90 | 0, 70, measured_velocity };
+			tud_midi_stream_write(0, note_on, 3);
+
+			key_activated[23] = true;
+		}
+
+		//save the distance change for later
+		key_dist_change[23] = mag.Bz;
+
+		//midi_task();
 
 		//HAL_Delay(100);
   }
