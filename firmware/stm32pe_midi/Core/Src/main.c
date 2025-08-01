@@ -46,27 +46,44 @@
 #define DEBUG3_LED_GPIO_Port GPIOA
 #define DEBUG3_LED_Pin GPIO_PIN_10
 
-int start_octave = 3;
+// ==========================================================================================
+// the config is below
+// ==========================================================================================
+
+//midi
+int start_octave = 4; //midi codes
+int mt_send_black = 40; //midi on
+int mt_send_white = 30; //midi on
+
+//led
+int startup_cutoff_wait = 100; //led cutoff
+
 
 //all data below is in order of b, c, c#, d, d#, e, etc..
 //uint16_t light_key_arr[25];
 
-bool key_activated[25];
+bool key_activated[25]; //midi on/off
 
-float key_velocity_time[25];
-float key_dist_change[25];
-float key_dist_max[25];
+float key_raw_initial[25]; //midi velocity
 
-float key_high_cutoff[25];
-float key_low_cutoff[25];
+float key_tick_start[25]; //midi velocity
 
-uint8_t midi_key_arr[25];
+float key_low_cutoff[25]; //leds
 
-TMAG5273_Handle_t tmag_handles[25];
+float key_off_cutoff[25]; //midi off
+
+uint8_t midi_key_arr[25]; //midi codes
+
+TMAG5273_Handle_t tmag_handles[25]; //tmag obj handles
 
 uint8_t tmag_addr_arr[25] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
 		0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22,
-		0x23, 0x24, 0x25, 0x26, 0x27, 0x28 };
+		0x23,
+		0x24, 0x25, 0x26, 0x27, 0x28 }; //tmag addresses
+
+bool is_black_key[25] = { false, false, true, false, true, false, false, true,
+		false, true, false, true, false, false, true, false, true, false, false,
+		true, false, true, false, true, false };
 
 /* USER CODE END Includes */
 
@@ -342,10 +359,10 @@ int main(void)
 	// fill midi array
 	fill_midi_key_arr(midi_key_arr, 25, start_octave);
 
-	// init high/low cutoffs
+	// init high/low cutoffs & other stuff
 	for (int i = 0; i < 25; i++) {
 		key_low_cutoff[i] = -1.0f;
-		key_high_cutoff[i] = -1.0f;
+		key_tick_start[i] = 0;
 	}
 
 	// init device stack for tiny usb!!!
@@ -385,33 +402,36 @@ int main(void)
 		if (startup_tick == 0) {
 			startup_tick = HAL_GetTick();
 		}
-		uint8_t allow_cutoff_set = (HAL_GetTick() - startup_tick > 500);
+		uint8_t allow_cutoff_set = (HAL_GetTick() - startup_tick
+				> startup_cutoff_wait);
 		// ^ this time is how long the user can not touch the keys after being plugged in
 
+		//for each 25 keys
 		for (int d = 0; d < 25; d++) {
+
 			// read address register to see if address is actually rewritten
 			uint8_t addr_reg = 0;
 			if (TMAG5273_ReadRegister(&tmag_handles[d], 0x0C, 1, &addr_reg)
 					== 0) {
-				//printf("I2C address register: 0x%02X\n", addr_reg);
-
-				//printf("\r\n");
+				//printf("I2C address register: 0x%02X\r\n", addr_reg);
 			} else {
-				printf("Failed to read i2c register data\r\n");
+				printf(
+						"Sensor Index = %d, Failed to read i2c register data\r\n",
+						d);
 			};
-
 
 			// reading sensor to output led/etc.
 			TMAG5273_Axis_t mag;
 			uint8_t ret = TMAG5273_ReadMagneticField(&tmag_handles[d], &mag);
 			if (ret != 0) {
-				printf("ReadMagneticField failed with code %d\r\n", ret);
+				printf(
+						"I2C Address = 0x%02X, Sensor Index = %d, ReadMagneticField failed code = %d\r\n",
+						addr_reg, d, ret);
 			} else {
 				//printf("Bx = %.3f mT, By = %.3f mT, Bz = %.3f mT\r\n", mag.Bx, mag.By, mag.Bz);
 				//printf("Return value: %u\r\n", ret);
 
-				uint16_t bz_u16 = map_float_to_uint16(mag.Bz, 10.0f, 80.0f, 0,
-						3000);
+				uint16_t bz_u16 = 0;
 
 				//use the key_low_cutoff nan to set an initial cutoff for later calculations
 				if (key_low_cutoff[d] < 0 && allow_cutoff_set) {
@@ -420,6 +440,10 @@ int main(void)
 					} else {
 						key_low_cutoff[d] = 0;
 					}
+
+					key_off_cutoff[d] = mag.Bz + 5; //add a padding of 5
+
+					key_raw_initial[d] = mag.Bz;
 				} else {
 					//normalize mag.Bz around ~9
 					bz_u16 = map_float_to_uint16(mag.Bz - key_low_cutoff[d],
@@ -437,43 +461,54 @@ int main(void)
 				//TODO do mpe midi with this
 				//printf("Angle: %.2f deg, Magnitude: %.2f\r\n", angle.angle, angle.magnitude);
 			} else {
-				printf("Failed to read angle, code: %d\r\n", ret);
+				printf("Sensor Index = %d, Failed angle read, code: %d\r\n",
+						d,
+						ret);
 			}
 
-			float current_change = abs(mag.Bz - key_dist_change[d]);
 			//printf("Bz = %.3f mT, Angle: %.2f deg, Change: %.2f, Max: %.2f\r\n", mag.Bz, angle.angle, current_change, key_dist_max[d]);
 
-			//min 24mT, max 80mT - save the velocity to a variable if the key distance change is more than before
-			if (key_dist_max[d] < current_change) {
-				key_dist_max[d] = current_change;
-				//varies between ~2 - 8
+			//start time for measuring velocity
+			if (mag.Bz > key_raw_initial[d] + 1.5 && key_tick_start[d] == 0) {
+				key_tick_start[d] = HAL_GetTick();
+			} else if (mag.Bz < key_raw_initial[d] + 0.8
+					&& key_tick_start[d] != 0) {
+				//safety measure to stop measuring tick start as user has started measurement but did not trigger a key press
+				key_tick_start[d] = 0;
 			}
 
 			//turn off key
-			if (mag.Bz < 24 && key_activated[d]) {
+			if (mag.Bz < key_off_cutoff[d] && key_activated[d]) {
 				uint8_t note_off[3] = { 0x80 | 0, midi_key_arr[d], 0 };
+				
 				tud_midi_stream_write(0, note_off, 3);
+				printf("%d, midi = off, code = %d\r\n", d, midi_key_arr[d]);
 
 				key_activated[d] = false;
 
 				//reset velocity measurement
-				key_dist_max[d] = 0;
+				key_tick_start[d] = 0;
 			}
 
+			//use a specific mt send as the black keys have a shorter distance compared to white keys
+			int mt_send = is_black_key[d] ? mt_send_black : mt_send_white;
+
 			//turn on key
-			if (mag.Bz > 73 && !key_activated[d]) {
-				uint8_t measured_velocity = map_float_to_uint16(key_dist_max[d],
-						2.0f, 8.0f, 20, 127);
+			if (mag.Bz > mt_send && !key_activated[d]) {
+				uint8_t measured_velocity = map_velocity_log(
+						HAL_GetTick() - key_tick_start[d]);
+				
 				uint8_t note_on[3] = { 0x90 | 0, midi_key_arr[d],
 						measured_velocity };
 
 				tud_midi_stream_write(0, note_on, 3);
-
+				printf(
+						"%d, midi = on, code = %d, velocity = %d\r\n", d,
+						midi_key_arr[d], measured_velocity);
+				
 				key_activated[d] = true;
 			}
 
-			//save the distance change for later
-			key_dist_change[d] = mag.Bz;
 		}
 
   }
@@ -495,7 +530,7 @@ void SystemClock_Config(void)
 
   /** Configure the main internal regulator output voltage
   */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
 
@@ -509,12 +544,12 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 10;
+  RCC_OscInitStruct.PLL.PLLN = 50;
   RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
   RCC_OscInitStruct.PLL.PLLR = 2;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
-  RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOMEDIUM;
+  RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
   RCC_OscInitStruct.PLL.PLLFRACN = 0;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -526,15 +561,15 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
                               |RCC_CLOCKTYPE_D3PCLK1|RCC_CLOCKTYPE_D1PCLK1;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV1;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV1;
-  RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
+  RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -556,7 +591,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00707CBB;
+  hi2c1.Init.Timing = 0x10C0ECFF;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;

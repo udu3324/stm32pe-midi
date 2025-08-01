@@ -12,6 +12,37 @@ uint16_t map_float_to_uint16(float x, float in_min, float in_max,
 			+ out_min);
 }
 
+//internal
+uint8_t map_uint32_to_uint8(uint32_t input, uint32_t in_min, uint32_t in_max,
+		uint8_t out_min, uint8_t out_max) {
+	if (in_max <= in_min)
+		return out_min; // Avoid division by zero or invalid range
+
+	// Clamp input to in_min and in_max
+	if (input < in_min)
+		input = in_min;
+	if (input > in_max)
+		input = in_max;
+
+	// Perform the mapping
+	uint32_t scaled = (input - in_min) * (uint32_t) (out_max - out_min);
+	uint32_t result = scaled / (in_max - in_min) + out_min;
+
+	return (uint8_t) result;
+}
+
+int8_t map_velocity_log(uint32_t t) {
+	if (t < 110) {
+		return 127;
+	} else if (t < 350) {
+		return map_uint32_to_uint8(t, 110, 350, 81, 126);
+	} else if (t < 800) {
+		return map_uint32_to_uint8(t, 350, 800, 51, 81);
+	} else {
+		return map_uint32_to_uint8(t, 800, 10000, 30, 51);
+	}
+}
+
 void fill_midi_key_arr(uint8_t *arr, int size, int start_octave) {
 	int midi_note = 11 + (start_octave * 12);
 	for (int i = 0; i < size; i++) {
