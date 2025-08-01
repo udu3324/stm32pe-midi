@@ -512,3 +512,56 @@ The triggering of a key was pretty easy. It was a different story for the veloci
 Recording the output midi worked perfectly, and I made sure the code could be scalable to the rest of the 24 keys.
 
 **Total time spent: 3 hours**
+
+# July 30th: SMD Soldering
+
+<img width="1056" height="488" alt="image" src="https://github.com/user-attachments/assets/6bf1a892-7b52-47d4-adf0-ea89e633262b" />
+
+So i bought a hotplate but it did not come with a charger brick for powering it with 20V 3A. I improvised by using my bench powersupply, usb-c breakout, and my phone charger cable to make it all work last second. (all of these came from hack club funding, tysm!!! well, not the cable)
+
+<img width="539" height="541" alt="image" src="https://github.com/user-attachments/assets/511f7c3f-a9ed-4766-84bb-927e54aa8b3a" />
+
+I had to use my hot air gun as well as my hot plate to remove and replace my sensors. It was pretty easy removing them! It was the opposite for replacing them...
+
+<img width="420" height="86" alt="image" src="https://github.com/user-attachments/assets/f57fef48-a995-4dfc-a47d-001552f1a9f8" />
+
+These ic chips are so small and I don't have any extras as they all cost about a dollar each. I dropped two and gave myself two heart attacks.
+
+I used my tweezers to do everything. I do not own a solder paste stencil/syringe, just a tub of it. I had to shape the solder paste onto the sot-23 pads and it was horrible.
+
+After soldering, I made sure everything was connected and nothing was bridged with a multimeter.
+
+**Total time spent: 8 hours**
+
+# July 31st: Getting all the keys to work
+
+<img width="805" height="507" alt="Screenshot 2025-07-31 224251" src="https://github.com/user-attachments/assets/db50b3bd-c73b-4bd9-af96-953f0a6135d4" />
+
+I went with the approach of getting all the i2c channels being combined together through my mux. This would be better than looping through all six of them which possibly could slow down my main loop.
+
+To do this, I would have to give all my sensors unique addresses. This is because my fix from yesterday made all the sensors unique in one channel, but that channel's addresses are the same from the other channels.
+
+The library i found for the TMAG5273 does not have a function to rewrite i2c addresses, so I had to make one somehow.
+
+```c
+uint8_t TMAG5273_RewriteI2CAddress(TMAG5273_Handle_t *pHandle, uint8_t new_addr) {
+    if (new_addr < 0x08 || new_addr > 0x77)
+        return 3;
+    uint8_t reg_val = (new_addr << 1) | 0x01;
+    uint8_t result = TMAG5273_WriteRegister(pHandle, 0x0C, reg_val);
+    if (result == 0) {
+        pHandle->address = new_addr; // update handle's address
+    }
+    return result;
+}
+```
+
+I had some trouble using it at first, but turns out, I had to initialize the sensor, and then use it. bruh.
+
+<img width="811" height="151" alt="Screenshot 2025-08-01 011623" src="https://github.com/user-attachments/assets/f1e69592-7d0a-41f2-b65f-b143365e4082" />
+
+After getting the main loop working with all 25 sensors, it was magic. The lights were pwm controlled by how far the magnet was on each key. It was amazing.
+
+I had to implement a value that would normal the resting sensor values as some would be too close to the sensor. It was some neat logic that works flawlessly.
+
+**Total time spent: 5 hours**
