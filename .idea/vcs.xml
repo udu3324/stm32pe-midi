@@ -2,5 +2,6 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/firmware/stm32pe_midi/Libs/tinyusb" vcs="Git" />
   </component>
 </project>
