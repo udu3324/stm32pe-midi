@@ -133,16 +133,6 @@ uint16_t map_float_to_uint16(float x, float in_min, float in_max,
 			+ out_min);
 }
 
-uint8_t map_float_to_uint8(float x, float in_min, float in_max, uint8_t out_min,
-		uint8_t out_max) {
-	if (x < in_min)
-		x = in_min;
-	if (x > in_max)
-		x = in_max;
-	return (uint8_t) (((x - in_min) * (out_max - out_min)) / (in_max - in_min)
-			+ out_min);
-}
-
 int _write(int file, char *ptr, int len) {
 	(void) file;
 
@@ -168,50 +158,6 @@ int _write(int file, char *ptr, int len) {
 	}
 
 	return len;
-}
-
-// Variable that holds the current position in the sequence.
-uint32_t note_pos = 0;
-
-// Store example melody as an array of note values
-const uint8_t note_sequence[] = { 74, 78, 81, 86, 90, 93, 98, 102, 57, 61, 66,
-		69, 73, 78, 81, 85, 88, 92, 97, 100, 97, 92, 88, 85, 81, 78, 74, 69, 66,
-		62, 57, 62, 66, 69, 74, 78, 81, 86, 90, 93, 97, 102, 97, 93, 90, 85, 81,
-		78, 73, 68, 64, 61, 56, 61, 64, 68, 74, 78, 81, 86, 90, 93, 98, 102 };
-
-void midi_task(void) {
-	static int note_pos = 0;
-	static uint32_t last_tick = 0;
-	uint8_t const cable_num = 0;
-	uint8_t const channel = 0;
-
-	// Only send MIDI if enough time has passed
-	uint32_t now = HAL_GetTick();
-	if (now - last_tick < 286)
-		return;
-	last_tick = now;
-
-	// Clear any received MIDI data
-	while (tud_midi_available()) {
-		uint8_t packet[4];
-		tud_midi_packet_read(packet);
-	}
-
-	// Send Note On for current note
-	uint8_t note_on[3] = { 0x90 | channel, note_sequence[note_pos], 127 };
-	tud_midi_stream_write(cable_num, note_on, 3);
-
-	// Send Note Off for previous note
-	int previous =
-			(note_pos == 0) ? (sizeof(note_sequence) - 1) : (note_pos - 1);
-	uint8_t note_off[3] = { 0x80 | channel, note_sequence[previous], 0 };
-	tud_midi_stream_write(cable_num, note_off, 3);
-
-	// Advance note position, wrap around
-	note_pos++;
-	if (note_pos >= sizeof(note_sequence)) {
-		note_pos = 0;
-	}
 }
 
 TMAG5273_Handle_t TMAG5273_CreateHandle(uint8_t address) {
@@ -294,15 +240,8 @@ int main(void)
 		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
 	}
 
-	// select a channel on the mux to talk to sensor devices
-	//if (i2c_mux_select(&tca_mux, 0) != 0) {
-	//	HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
-	//}
-
-	//uint8_t tmag_addr = 0x35 << 1;
-	//if (HAL_I2C_IsDeviceReady(&hi2c1, tmag_addr, 3, HAL_MAX_DELAY) != HAL_OK) {
-	//	HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
-	//}
+	//on each channel, there are four i2c sensors connected with unique addresses in that channel only
+	//the address has to be rewritten for all the sensors to then combine all channels pull data easier
 
 	//sc0
 	i2c_mux_select(&tca_mux, 0);
