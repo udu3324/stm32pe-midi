@@ -35,6 +35,8 @@
 
 #include "tusb.h"
 
+#include "helper.h"
+
 #define DEBUG4_LED_GPIO_Port GPIOA
 #define DEBUG4_LED_Pin GPIO_PIN_8
 
@@ -44,8 +46,10 @@
 #define DEBUG3_LED_GPIO_Port GPIOA
 #define DEBUG3_LED_Pin GPIO_PIN_10
 
+int start_octave = 3;
+
 //all data below is in order of b, c, c#, d, d#, e, etc..
-//uint16_t light_key_arr[25] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+//uint16_t light_key_arr[25];
 
 bool key_activated[25];
 
@@ -56,17 +60,13 @@ float key_dist_max[25];
 float key_high_cutoff[25];
 float key_low_cutoff[25];
 
-int start_octave = 3; // 3 means B3 (MIDI 59) is first
 uint8_t midi_key_arr[25];
-
 
 TMAG5273_Handle_t tmag_handles[25];
 
 uint8_t tmag_addr_arr[25] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
 		0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22,
 		0x23, 0x24, 0x25, 0x26, 0x27, 0x28 };
-
-
 
 /* USER CODE END Includes */
 
@@ -123,16 +123,6 @@ i2c_mux_t tca_mux = { .hi2c = &hi2c1,     // Using I2C1 on PB6 (SCL) / PB7 (SDA)
 		.addr_offset = 0            // 0 if all A0/A1/A2 pins are GND
 		};
 
-uint16_t map_float_to_uint16(float x, float in_min, float in_max,
-		uint16_t out_min, uint16_t out_max) {
-	if (x < in_min)
-		x = in_min;
-	if (x > in_max)
-		x = in_max;
-	return (uint16_t) (((x - in_min) * (out_max - out_min)) / (in_max - in_min)
-			+ out_min);
-}
-
 int _write(int file, char *ptr, int len) {
 	(void) file;
 
@@ -159,35 +149,6 @@ int _write(int file, char *ptr, int len) {
 
 	return len;
 }
-
-TMAG5273_Handle_t TMAG5273_CreateHandle(uint8_t address) {
-	TMAG5273_Handle_t tmag = { .pI2c = &hi2c1, .address = address,
-			.magTempcoMode = TMAG5273_NO_MAG_TEMPCO, .convAvgMode =
-					TMAG5273_CONV_AVG_32X, .readMode =
-					TMAG5273_READ_MODE_STANDARD, .lplnMode = TMAG5273_LOW_NOISE,
-			.operatingMode = TMAG5273_OPERATING_MODE_STANDBY, .magXYRange =
-					TMAG5273_MAG_RANGE_40MT_133MT, .magZRange =
-					TMAG5273_MAG_RANGE_40MT_133MT, .magXYRange =
-					TMAG5273_MAG_RANGE_40MT_133MT, .magZRange =
-					TMAG5273_MAG_RANGE_80MT_266MT, .tempChEn =
-					TMAG5273_TEMP_CH_DISABLED, .angEn = TMAG5273_ANG_X_Z,
-			.magChEn = TMAG5276_MAG_Z_X, .crcEna = TMAG5273_CRC_DISABLE,
-			.sensor_id = 0, .sleep = TMAG5276_10MS };
-
-	return tmag;
-}
-
-void fill_midi_key_arr(uint8_t *arr, int size, int start_octave) {
-	int midi_note = 11 + (start_octave * 12);
-	for (int i = 0; i < size; i++) {
-		arr[i] = midi_note;
-		// Step to next note in chromatic order
-		// B, C, C#, D, D#, E, F, F#, G, G#, A, A#
-		// Intervals: 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-		midi_note++;
-	}
-}
-
 
 /* USER CODE END 0 */
 
@@ -229,9 +190,9 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
 
-	// start the timer for the multiplexer ic for the leds
+	// start the timer for the led mux
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-	// set mp-reset on the i2c multiplexer to be high as it is active-low reset input
+	// set mp-reset on the i2c mux to be high as it is active-low reset input
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
 
 	// disable all i2c channels for a clean slate bruh
@@ -246,19 +207,19 @@ int main(void)
 	//sc0
 	i2c_mux_select(&tca_mux, 0);
 
-	tmag_handles[0] = TMAG5273_CreateHandle(0x35);
+	tmag_handles[0] = TMAG5273_CreateHandle(&hi2c1, 0x35);
 	TMAG5273_Init(&tmag_handles[0]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[0], tmag_addr_arr[0]);
 
-	tmag_handles[1] = TMAG5273_CreateHandle(0x22);
+	tmag_handles[1] = TMAG5273_CreateHandle(&hi2c1, 0x22);
 	TMAG5273_Init(&tmag_handles[1]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[1], tmag_addr_arr[1]);
 
-	tmag_handles[3] = TMAG5273_CreateHandle(0x78);
+	tmag_handles[3] = TMAG5273_CreateHandle(&hi2c1, 0x78);
 	TMAG5273_Init(&tmag_handles[3]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[3], tmag_addr_arr[3]);
 
-	tmag_handles[5] = TMAG5273_CreateHandle(0x44);
+	tmag_handles[5] = TMAG5273_CreateHandle(&hi2c1, 0x44);
 	TMAG5273_Init(&tmag_handles[5]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[5], tmag_addr_arr[5]);
 
@@ -266,19 +227,19 @@ int main(void)
 	//sc1
 	i2c_mux_select(&tca_mux, 1);
 
-	tmag_handles[6] = TMAG5273_CreateHandle(0x35);
+	tmag_handles[6] = TMAG5273_CreateHandle(&hi2c1, 0x35);
 	TMAG5273_Init(&tmag_handles[6]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[6], tmag_addr_arr[6]);
 
-	tmag_handles[8] = TMAG5273_CreateHandle(0x22);
+	tmag_handles[8] = TMAG5273_CreateHandle(&hi2c1, 0x22);
 	TMAG5273_Init(&tmag_handles[8]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[8], tmag_addr_arr[8]);
 
-	tmag_handles[10] = TMAG5273_CreateHandle(0x78);
+	tmag_handles[10] = TMAG5273_CreateHandle(&hi2c1, 0x78);
 	TMAG5273_Init(&tmag_handles[10]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[10], tmag_addr_arr[10]);
 
-	tmag_handles[12] = TMAG5273_CreateHandle(0x44);
+	tmag_handles[12] = TMAG5273_CreateHandle(&hi2c1, 0x44);
 	TMAG5273_Init(&tmag_handles[12]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[12], tmag_addr_arr[12]);
 
@@ -286,19 +247,19 @@ int main(void)
 	//sc2
 	i2c_mux_select(&tca_mux, 2);
 
-	tmag_handles[13] = TMAG5273_CreateHandle(0x35);
+	tmag_handles[13] = TMAG5273_CreateHandle(&hi2c1, 0x35);
 	TMAG5273_Init(&tmag_handles[13]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[13], tmag_addr_arr[13]);
 
-	tmag_handles[15] = TMAG5273_CreateHandle(0x22);
+	tmag_handles[15] = TMAG5273_CreateHandle(&hi2c1, 0x22);
 	TMAG5273_Init(&tmag_handles[15]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[15], tmag_addr_arr[15]);
 
-	tmag_handles[17] = TMAG5273_CreateHandle(0x78);
+	tmag_handles[17] = TMAG5273_CreateHandle(&hi2c1, 0x78);
 	TMAG5273_Init(&tmag_handles[17]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[17], tmag_addr_arr[17]);
 
-	tmag_handles[18] = TMAG5273_CreateHandle(0x44);
+	tmag_handles[18] = TMAG5273_CreateHandle(&hi2c1, 0x44);
 	TMAG5273_Init(&tmag_handles[18]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[18], tmag_addr_arr[18]);
 
@@ -306,19 +267,19 @@ int main(void)
 	//sc3
 	i2c_mux_select(&tca_mux, 3);
 
-	tmag_handles[20] = TMAG5273_CreateHandle(0x35);
+	tmag_handles[20] = TMAG5273_CreateHandle(&hi2c1, 0x35);
 	TMAG5273_Init(&tmag_handles[20]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[20], tmag_addr_arr[20]);
 
-	tmag_handles[22] = TMAG5273_CreateHandle(0x22);
+	tmag_handles[22] = TMAG5273_CreateHandle(&hi2c1, 0x22);
 	TMAG5273_Init(&tmag_handles[22]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[22], tmag_addr_arr[22]);
 
-	tmag_handles[24] = TMAG5273_CreateHandle(0x78);
+	tmag_handles[24] = TMAG5273_CreateHandle(&hi2c1, 0x78);
 	TMAG5273_Init(&tmag_handles[24]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[24], tmag_addr_arr[24]);
 
-	tmag_handles[2] = TMAG5273_CreateHandle(0x44);
+	tmag_handles[2] = TMAG5273_CreateHandle(&hi2c1, 0x44);
 	TMAG5273_Init(&tmag_handles[2]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[2], tmag_addr_arr[2]);
 
@@ -326,19 +287,19 @@ int main(void)
 	//sc4
 	i2c_mux_select(&tca_mux, 4);
 
-	tmag_handles[4] = TMAG5273_CreateHandle(0x35);
+	tmag_handles[4] = TMAG5273_CreateHandle(&hi2c1, 0x35);
 	TMAG5273_Init(&tmag_handles[4]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[4], tmag_addr_arr[4]);
 
-	tmag_handles[7] = TMAG5273_CreateHandle(0x22);
+	tmag_handles[7] = TMAG5273_CreateHandle(&hi2c1, 0x22);
 	TMAG5273_Init(&tmag_handles[7]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[7], tmag_addr_arr[7]);
 
-	tmag_handles[9] = TMAG5273_CreateHandle(0x78);
+	tmag_handles[9] = TMAG5273_CreateHandle(&hi2c1, 0x78);
 	TMAG5273_Init(&tmag_handles[9]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[9], tmag_addr_arr[9]);
 
-	tmag_handles[11] = TMAG5273_CreateHandle(0x44);
+	tmag_handles[11] = TMAG5273_CreateHandle(&hi2c1, 0x44);
 	TMAG5273_Init(&tmag_handles[11]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[11], tmag_addr_arr[11]);
 
@@ -346,19 +307,19 @@ int main(void)
 	//sc5
 	i2c_mux_select(&tca_mux, 5);
 
-	tmag_handles[14] = TMAG5273_CreateHandle(0x35);
+	tmag_handles[14] = TMAG5273_CreateHandle(&hi2c1, 0x35);
 	TMAG5273_Init(&tmag_handles[14]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[14], tmag_addr_arr[14]);
 
-	tmag_handles[16] = TMAG5273_CreateHandle(0x22);
+	tmag_handles[16] = TMAG5273_CreateHandle(&hi2c1, 0x22);
 	TMAG5273_Init(&tmag_handles[16]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[16], tmag_addr_arr[16]);
 
-	tmag_handles[19] = TMAG5273_CreateHandle(0x78);
+	tmag_handles[19] = TMAG5273_CreateHandle(&hi2c1, 0x78);
 	TMAG5273_Init(&tmag_handles[19]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[19], tmag_addr_arr[19]);
 
-	tmag_handles[21] = TMAG5273_CreateHandle(0x44);
+	tmag_handles[21] = TMAG5273_CreateHandle(&hi2c1, 0x44);
 	TMAG5273_Init(&tmag_handles[21]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[21], tmag_addr_arr[21]);
 
@@ -366,7 +327,7 @@ int main(void)
 	//sc6
 	i2c_mux_select(&tca_mux, 6);
 
-	tmag_handles[23] = TMAG5273_CreateHandle(0x35);
+	tmag_handles[23] = TMAG5273_CreateHandle(&hi2c1, 0x35);
 	TMAG5273_Init(&tmag_handles[23]);
 	TMAG5273_RewriteI2CAddress(&tmag_handles[23], tmag_addr_arr[23]);
 
@@ -374,6 +335,9 @@ int main(void)
 
 	// enable sc0–sc6, disable sc7
 	i2c_mux_select_multi(&tca_mux, 0x7F);
+
+
+
 
 	// fill midi array
 	fill_midi_key_arr(midi_key_arr, 25, start_octave);
@@ -403,24 +367,6 @@ int main(void)
 		//continue;
 
 		//printf("Test 1\r\n");
-
-		//printf("Test 2\r\n");
-		//printf("Test 2.5 - Device ID set as: 0x%02X\n", tmag.deviceId);
-
-		//for (uint8_t addr = 0x08; addr <= 0x77; addr++) {
-		//	if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK) {
-		//		printf("Found device at 0x%02X\n", addr);
-		//	}
-		//}
-
-		//printf("Test 3\r\n");
-
-		//uint8_t id;
-		//if (TMAG5273_ReadRegister(&tmag, DEVICE_ID, 1, &id) == 0) {
-		//	printf("Device ID: 0x%02X, \n", id);
-		//} else {
-		//	printf("Failed to read Device ID\n");
-		//}
 
 		// reading raw register data to test i2c device
 		//uint8_t raw_data[6];
@@ -530,9 +476,6 @@ int main(void)
 			key_dist_change[d] = mag.Bz;
 		}
 
-		//midi_task();
-
-		//HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
