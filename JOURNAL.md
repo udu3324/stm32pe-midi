@@ -500,3 +500,15 @@ I finally got midi to be generated from my board!!! But.. It is inconsistant.
 Turns out, the midi test function i used has a hal_delay which runs in the func > while loop > main.c which blocks all other things from running. It was fixed by using the HAL ticking function to avoid sleeping.
 
 **Total time spent: 5 hours**
+
+# July 29th: First functional key!!!
+
+<img width="670" height="207" alt="Screenshot 2025-07-29 183725" src="https://github.com/user-attachments/assets/7ca1a4b1-0bbd-41dc-b91e-4bbd595dd19a" />
+
+The triggering of a key was pretty easy. It was a different story for the velocity though. All i needed was to parse the sensor's distance and have cutoffs to trigger midi notes being on and off. For the velocity, It was the measurement in how much distance changed over time. A distance that occured in a shorter amount of time would have more velocity, while a longer time would have less velocity.
+
+<img width="982" height="341" alt="Screenshot 2025-07-29 185422" src="https://github.com/user-attachments/assets/e917f472-c8dc-4909-beab-0366dc38279c" />
+
+Recording the output midi worked perfectly, and I made sure the code could be scalable to the rest of the 24 keys.
+
+**Total time spent: 3 hours**
