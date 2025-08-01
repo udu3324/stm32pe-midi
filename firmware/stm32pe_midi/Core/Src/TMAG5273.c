@@ -111,8 +111,14 @@ inline uint8_t TMAG5273_WriteRegisters(TMAG5273_Handle_t *pHandle, uint8_t reg,
 inline uint8_t TMAG5273_WriteRegisterGeneral(TMAG5273_Handle_t *pHandle,
 		uint8_t reg, uint8_t data);
 
+#define DEBUG4_LED_GPIO_Port GPIOA
+#define DEBUG4_LED_Pin GPIO_PIN_8
+
 #define DEBUG2_LED_GPIO_Port GPIOA
 #define DEBUG2_LED_Pin GPIO_PIN_9
+
+#define DEBUG3_LED_GPIO_Port GPIOA
+#define DEBUG3_LED_Pin GPIO_PIN_10
 
 
 
@@ -153,7 +159,7 @@ void TMAG5273_Init(TMAG5273_Handle_t *pHandle) {
 			while (1) {
 				printf("error 1\r\n");
 				HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
-				HAL_Delay(100);
+				HAL_Delay(1000);
 			}
 		}
 
@@ -165,6 +171,7 @@ void TMAG5273_Init(TMAG5273_Handle_t *pHandle) {
 			while (1) {
 				printf("error 2\r\n");
 				HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
+				HAL_GPIO_TogglePin(DEBUG4_LED_GPIO_Port, DEBUG4_LED_Pin);
 				HAL_Delay(1000);
 			}
 		}
@@ -176,7 +183,8 @@ void TMAG5273_Init(TMAG5273_Handle_t *pHandle) {
 		while (1) {
 			printf("error 3\r\n");
 			HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
-			HAL_Delay(5000);
+			HAL_GPIO_TogglePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin);
+			HAL_Delay(1000);
 		}
 	}
 
@@ -185,6 +193,8 @@ void TMAG5273_Init(TMAG5273_Handle_t *pHandle) {
 		while (1) {
 			printf("error 4\r\n");
 			HAL_GPIO_TogglePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin);
+			HAL_GPIO_TogglePin(DEBUG4_LED_GPIO_Port, DEBUG4_LED_Pin);
+			HAL_GPIO_TogglePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin);
 			HAL_Delay(1000);
 		}
 	}

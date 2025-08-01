@@ -44,15 +44,21 @@
 #define DEBUG3_LED_GPIO_Port GPIOA
 #define DEBUG3_LED_Pin GPIO_PIN_10
 
-//in order of b, c, c#, d, etc..
-uint16_t light_key_arr[25] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0 };
+//all data below is in order of b, c, c#, d, d#, e, etc..
+//uint16_t light_key_arr[25] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 bool key_activated[25];
+
 float key_velocity_time[25];
 float key_dist_change[25];
-
 float key_dist_max[25];
+
+float key_high_cutoff[25];
+float key_low_cutoff[25];
+
+int start_octave = 3; // 3 means B3 (MIDI 59) is first
+uint8_t midi_key_arr[25];
+
 
 TMAG5273_Handle_t tmag_handles[25];
 
@@ -208,6 +214,35 @@ void midi_task(void) {
 	}
 }
 
+TMAG5273_Handle_t TMAG5273_CreateHandle(uint8_t address) {
+	TMAG5273_Handle_t tmag = { .pI2c = &hi2c1, .address = address,
+			.magTempcoMode = TMAG5273_NO_MAG_TEMPCO, .convAvgMode =
+					TMAG5273_CONV_AVG_32X, .readMode =
+					TMAG5273_READ_MODE_STANDARD, .lplnMode = TMAG5273_LOW_NOISE,
+			.operatingMode = TMAG5273_OPERATING_MODE_STANDBY, .magXYRange =
+					TMAG5273_MAG_RANGE_40MT_133MT, .magZRange =
+					TMAG5273_MAG_RANGE_40MT_133MT, .magXYRange =
+					TMAG5273_MAG_RANGE_40MT_133MT, .magZRange =
+					TMAG5273_MAG_RANGE_80MT_266MT, .tempChEn =
+					TMAG5273_TEMP_CH_DISABLED, .angEn = TMAG5273_ANG_X_Z,
+			.magChEn = TMAG5276_MAG_Z_X, .crcEna = TMAG5273_CRC_DISABLE,
+			.sensor_id = 0, .sleep = TMAG5276_10MS };
+
+	return tmag;
+}
+
+void fill_midi_key_arr(uint8_t *arr, int size, int start_octave) {
+	int midi_note = 11 + (start_octave * 12);
+	for (int i = 0; i < size; i++) {
+		arr[i] = midi_note;
+		// Step to next note in chromatic order
+		// B, C, C#, D, D#, E, F, F#, G, G#, A, A#
+		// Intervals: 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+		midi_note++;
+	}
+}
+
+
 /* USER CODE END 0 */
 
 /**
@@ -260,52 +295,154 @@ int main(void)
 	}
 
 	// select a channel on the mux to talk to sensor devices
-	if (i2c_mux_select(&tca_mux, 0) != 0) {
-		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
-	}
+	//if (i2c_mux_select(&tca_mux, 0) != 0) {
+	//	HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
+	//}
 
 	//uint8_t tmag_addr = 0x35 << 1;
 	//if (HAL_I2C_IsDeviceReady(&hi2c1, tmag_addr, 3, HAL_MAX_DELAY) != HAL_OK) {
 	//	HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
 	//}
 
-	TMAG5273_Handle_t tmag = { .pI2c = &hi2c1,
-			.address = 0x35,
-			.magTempcoMode = TMAG5273_NO_MAG_TEMPCO, .convAvgMode =
-					TMAG5273_CONV_AVG_32X, .readMode =
-					TMAG5273_READ_MODE_STANDARD, .lplnMode = TMAG5273_LOW_NOISE,
-			.operatingMode = TMAG5273_OPERATING_MODE_STANDBY,
-			.magXYRange =
-					TMAG5273_MAG_RANGE_40MT_133MT,
-			.magZRange = TMAG5273_MAG_RANGE_40MT_133MT, .magXYRange =
-					TMAG5273_MAG_RANGE_40MT_133MT, .magZRange =
-					TMAG5273_MAG_RANGE_80MT_266MT, .tempChEn =
-					TMAG5273_TEMP_CH_DISABLED, .angEn = TMAG5273_ANG_X_Z,
-			.magChEn = TMAG5276_MAG_Z_X, .crcEna = TMAG5273_CRC_DISABLE,
-			.sensor_id =
-					0, .sleep = TMAG5276_10MS };
+	//sc0
+	i2c_mux_select(&tca_mux, 0);
 
-	TMAG5273_Init(&tmag);
+	tmag_handles[0] = TMAG5273_CreateHandle(0x35);
+	TMAG5273_Init(&tmag_handles[0]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[0], tmag_addr_arr[0]);
 
-	uint8_t result = TMAG5273_RewriteI2CAddress(&tmag, tmag_addr_arr[0]);
+	tmag_handles[1] = TMAG5273_CreateHandle(0x22);
+	TMAG5273_Init(&tmag_handles[1]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[1], tmag_addr_arr[1]);
 
-	if (result != 0) {
-		for (int i; i < result; i++) {
-			HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin,
-					GPIO_PIN_SET);
-			HAL_Delay(1000);
-			HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin,
-					GPIO_PIN_RESET);
-			HAL_Delay(1000);
-		}
+	tmag_handles[3] = TMAG5273_CreateHandle(0x78);
+	TMAG5273_Init(&tmag_handles[3]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[3], tmag_addr_arr[3]);
 
-		HAL_Delay(5000);
+	tmag_handles[5] = TMAG5273_CreateHandle(0x44);
+	TMAG5273_Init(&tmag_handles[5]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[5], tmag_addr_arr[5]);
 
-		while (1) {
-			HAL_GPIO_TogglePin(DEBUG4_LED_GPIO_Port, DEBUG4_LED_Pin);
-			HAL_Delay(1000);
-		}
+	
+	//sc1
+	i2c_mux_select(&tca_mux, 1);
 
+	tmag_handles[6] = TMAG5273_CreateHandle(0x35);
+	TMAG5273_Init(&tmag_handles[6]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[6], tmag_addr_arr[6]);
+
+	tmag_handles[8] = TMAG5273_CreateHandle(0x22);
+	TMAG5273_Init(&tmag_handles[8]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[8], tmag_addr_arr[8]);
+
+	tmag_handles[10] = TMAG5273_CreateHandle(0x78);
+	TMAG5273_Init(&tmag_handles[10]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[10], tmag_addr_arr[10]);
+
+	tmag_handles[12] = TMAG5273_CreateHandle(0x44);
+	TMAG5273_Init(&tmag_handles[12]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[12], tmag_addr_arr[12]);
+
+
+	//sc2
+	i2c_mux_select(&tca_mux, 2);
+
+	tmag_handles[13] = TMAG5273_CreateHandle(0x35);
+	TMAG5273_Init(&tmag_handles[13]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[13], tmag_addr_arr[13]);
+
+	tmag_handles[15] = TMAG5273_CreateHandle(0x22);
+	TMAG5273_Init(&tmag_handles[15]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[15], tmag_addr_arr[15]);
+
+	tmag_handles[17] = TMAG5273_CreateHandle(0x78);
+	TMAG5273_Init(&tmag_handles[17]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[17], tmag_addr_arr[17]);
+
+	tmag_handles[18] = TMAG5273_CreateHandle(0x44);
+	TMAG5273_Init(&tmag_handles[18]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[18], tmag_addr_arr[18]);
+
+
+	//sc3
+	i2c_mux_select(&tca_mux, 3);
+
+	tmag_handles[20] = TMAG5273_CreateHandle(0x35);
+	TMAG5273_Init(&tmag_handles[20]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[20], tmag_addr_arr[20]);
+
+	tmag_handles[22] = TMAG5273_CreateHandle(0x22);
+	TMAG5273_Init(&tmag_handles[22]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[22], tmag_addr_arr[22]);
+
+	tmag_handles[24] = TMAG5273_CreateHandle(0x78);
+	TMAG5273_Init(&tmag_handles[24]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[24], tmag_addr_arr[24]);
+
+	tmag_handles[2] = TMAG5273_CreateHandle(0x44);
+	TMAG5273_Init(&tmag_handles[2]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[2], tmag_addr_arr[2]);
+
+
+	//sc4
+	i2c_mux_select(&tca_mux, 4);
+
+	tmag_handles[4] = TMAG5273_CreateHandle(0x35);
+	TMAG5273_Init(&tmag_handles[4]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[4], tmag_addr_arr[4]);
+
+	tmag_handles[7] = TMAG5273_CreateHandle(0x22);
+	TMAG5273_Init(&tmag_handles[7]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[7], tmag_addr_arr[7]);
+
+	tmag_handles[9] = TMAG5273_CreateHandle(0x78);
+	TMAG5273_Init(&tmag_handles[9]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[9], tmag_addr_arr[9]);
+
+	tmag_handles[11] = TMAG5273_CreateHandle(0x44);
+	TMAG5273_Init(&tmag_handles[11]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[11], tmag_addr_arr[11]);
+
+
+	//sc5
+	i2c_mux_select(&tca_mux, 5);
+
+	tmag_handles[14] = TMAG5273_CreateHandle(0x35);
+	TMAG5273_Init(&tmag_handles[14]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[14], tmag_addr_arr[14]);
+
+	tmag_handles[16] = TMAG5273_CreateHandle(0x22);
+	TMAG5273_Init(&tmag_handles[16]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[16], tmag_addr_arr[16]);
+
+	tmag_handles[19] = TMAG5273_CreateHandle(0x78);
+	TMAG5273_Init(&tmag_handles[19]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[19], tmag_addr_arr[19]);
+
+	tmag_handles[21] = TMAG5273_CreateHandle(0x44);
+	TMAG5273_Init(&tmag_handles[21]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[21], tmag_addr_arr[21]);
+
+
+	//sc6
+	i2c_mux_select(&tca_mux, 6);
+
+	tmag_handles[23] = TMAG5273_CreateHandle(0x35);
+	TMAG5273_Init(&tmag_handles[23]);
+	TMAG5273_RewriteI2CAddress(&tmag_handles[23], tmag_addr_arr[23]);
+
+
+
+	// enable sc0–sc6, disable sc7
+	i2c_mux_select_multi(&tca_mux, 0x7F);
+
+	// fill midi array
+	fill_midi_key_arr(midi_key_arr, 25, start_octave);
+
+	// init high/low cutoffs
+	for (int i = 0; i < 25; i++) {
+		key_low_cutoff[i] = -1.0f;
+		key_high_cutoff[i] = -1.0f;
 	}
 
 	// init device stack for tiny usb!!!
@@ -326,9 +463,7 @@ int main(void)
 		//TLC5940_BreatheAllTest();
 		//continue;
 
-		printf("Test 1\r\n");
-
-
+		//printf("Test 1\r\n");
 
 		//printf("Test 2\r\n");
 		//printf("Test 2.5 - Device ID set as: 0x%02X\n", tmag.deviceId);
@@ -360,80 +495,101 @@ int main(void)
 		//	printf("Failed to read raw register data\r\n");
 		//}
 
-		// read address register to see if address is actually rewritten
-		uint8_t addr_reg = 0;
-		if (TMAG5273_ReadRegister(&tmag, 0x0C, 1, &addr_reg) == 0) {
-			printf("I2C address register: 0x%02X\n", addr_reg);
-
-			printf("\r\n");
-		} else {
-			printf("Failed to read i2c register data\r\n");
-		};
-
-
-		// reading sensor to output led/etc.
-		TMAG5273_Axis_t mag;
-		uint8_t ret = TMAG5273_ReadMagneticField(&tmag, &mag);
-		if (ret != 0) {
-			printf("ReadMagneticField failed with code %d\r\n", ret);
-		} else {
-			//printf("Bx = %.3f mT, By = %.3f mT, Bz = %.3f mT\r\n", mag.Bx, mag.By, mag.Bz);
-			//printf("Bz = %.3f mT\r\n", mag.Bz);
-
-			//printf("Return value: %u\r\n", ret);
-
-			uint16_t bz_u16 = map_float_to_uint16(mag.Bz, 10.0f, 80.0f, 0,
-					3000);
-
-			TLC5940_SetMappedByKeyLED(0, bz_u16);
-			TLC5940_Update();
+		//dont allow cutoffs to be set until a solid line of sensor values are being read good
+		static uint32_t startup_tick = 0;
+		if (startup_tick == 0) {
+			startup_tick = HAL_GetTick();
 		}
+		uint8_t allow_cutoff_set = (HAL_GetTick() - startup_tick > 500);
+		// ^ this time is how long the user can not touch the keys after being plugged in
 
-		// reading rotation from sensor
-		TMAG5273_Angle_t angle;
-		ret = TMAG5273_ReadAngle(&tmag, &angle);
-		if (ret == 0) {
-			//printf("Angle: %.2f deg, Magnitude: %.2f\r\n", angle.angle, angle.magnitude);
-			//printf("Angle: %.2f deg\r\n", angle.angle);
-		} else {
-			printf("Failed to read angle, code: %d\r\n", ret);
+		for (int d = 0; d < 25; d++) {
+			// read address register to see if address is actually rewritten
+			uint8_t addr_reg = 0;
+			if (TMAG5273_ReadRegister(&tmag_handles[d], 0x0C, 1, &addr_reg)
+					== 0) {
+				//printf("I2C address register: 0x%02X\n", addr_reg);
+
+				//printf("\r\n");
+			} else {
+				printf("Failed to read i2c register data\r\n");
+			};
+
+
+			// reading sensor to output led/etc.
+			TMAG5273_Axis_t mag;
+			uint8_t ret = TMAG5273_ReadMagneticField(&tmag_handles[d], &mag);
+			if (ret != 0) {
+				printf("ReadMagneticField failed with code %d\r\n", ret);
+			} else {
+				//printf("Bx = %.3f mT, By = %.3f mT, Bz = %.3f mT\r\n", mag.Bx, mag.By, mag.Bz);
+				//printf("Return value: %u\r\n", ret);
+
+				uint16_t bz_u16 = map_float_to_uint16(mag.Bz, 10.0f, 80.0f, 0,
+						3000);
+
+				//use the key_low_cutoff nan to set an initial cutoff for later calculations
+				if (key_low_cutoff[d] < 0 && allow_cutoff_set) {
+					if (mag.Bz > 9) {
+						key_low_cutoff[d] = mag.Bz - 9;
+					} else {
+						key_low_cutoff[d] = 0;
+					}
+				} else {
+					//normalize mag.Bz around ~9
+					bz_u16 = map_float_to_uint16(mag.Bz - key_low_cutoff[d],
+							10.0f, 80.0f, 0, 3000);
+				}
+
+				TLC5940_SetMappedByKeyLED(d, bz_u16);
+				TLC5940_Update();
+			}
+
+			// reading rotation from sensor
+			TMAG5273_Angle_t angle;
+			ret = TMAG5273_ReadAngle(&tmag_handles[d], &angle);
+			if (ret == 0) {
+				//TODO do mpe midi with this
+				//printf("Angle: %.2f deg, Magnitude: %.2f\r\n", angle.angle, angle.magnitude);
+			} else {
+				printf("Failed to read angle, code: %d\r\n", ret);
+			}
+
+			float current_change = abs(mag.Bz - key_dist_change[d]);
+			//printf("Bz = %.3f mT, Angle: %.2f deg, Change: %.2f, Max: %.2f\r\n", mag.Bz, angle.angle, current_change, key_dist_max[d]);
+
+			//min 24mT, max 80mT - save the velocity to a variable if the key distance change is more than before
+			if (key_dist_max[d] < current_change) {
+				key_dist_max[d] = current_change;
+				//varies between ~2 - 8
+			}
+
+			//turn off key
+			if (mag.Bz < 24 && key_activated[d]) {
+				uint8_t note_off[3] = { 0x80 | 0, midi_key_arr[d], 0 };
+				tud_midi_stream_write(0, note_off, 3);
+
+				key_activated[d] = false;
+
+				//reset velocity measurement
+				key_dist_max[d] = 0;
+			}
+
+			//turn on key
+			if (mag.Bz > 73 && !key_activated[d]) {
+				uint8_t measured_velocity = map_float_to_uint16(key_dist_max[d],
+						2.0f, 8.0f, 20, 127);
+				uint8_t note_on[3] = { 0x90 | 0, midi_key_arr[d],
+						measured_velocity };
+
+				tud_midi_stream_write(0, note_on, 3);
+
+				key_activated[d] = true;
+			}
+
+			//save the distance change for later
+			key_dist_change[d] = mag.Bz;
 		}
-
-		float current_change = abs(mag.Bz - key_dist_change[23]);
-		printf("Bz = %.3f mT, Angle: %.2f deg, Change: %.2f, Max: %.2f\r\n",
-				mag.Bz, angle.angle, current_change,
-				key_dist_max[23]);
-		//min 24mT, max 80mT
-
-		//save the velocity to a variable if the key distance change is more than before
-		if (key_dist_max[23] < current_change) {
-			key_dist_max[23] = current_change;
-			//varies between ~2 - 8
-		}
-
-		//turn off key
-		if (mag.Bz < 24 && key_activated[23]) {
-			uint8_t note_off[3] = { 0x80 | 0, 70, 0 };
-			tud_midi_stream_write(0, note_off, 3);
-
-			key_activated[23] = false;
-
-			//reset velocity measurement
-			key_dist_max[23] = 0;
-		}
-
-		//turn on key
-		if (mag.Bz > 78 && !key_activated[23]) {
-			uint8_t measured_velocity = map_float_to_uint16(key_dist_max[23],
-					2.0f, 8.0f, 20, 127);
-			uint8_t note_on[3] = { 0x90 | 0, 70, measured_velocity };
-			tud_midi_stream_write(0, note_on, 3);
-
-			key_activated[23] = true;
-		}
-
-		//save the distance change for later
-		key_dist_change[23] = mag.Bz;
 
 		//midi_task();
 
