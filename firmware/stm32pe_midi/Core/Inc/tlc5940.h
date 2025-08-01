@@ -19,7 +19,10 @@ void TLC5940_Update(void);
 void TLC5940_SetLED(uint8_t led_index, uint16_t brightness);
 
 // this uses setLED and maps them to combine working indexes for ease of use
-void TLC5940_SetMappedLED(uint8_t logical_index, uint16_t brightness);
+void TLC5940_SetMappedPhysicallyLED(uint8_t logical_index, uint16_t brightness);
+
+// uses the physical mapping to then map by b, c, c#, d, etc.
+void TLC5940_SetMappedByKeyLED(uint8_t key_index, uint16_t brightness);
 
 // tests below, including update
 void TLC5940_TestPattern(void);

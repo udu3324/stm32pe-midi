@@ -40,7 +40,7 @@ void TLC5940_SetLED(uint8_t led_index, uint16_t brightness) {
 	led_pwm[led_index] = brightness;
 }
 
-void TLC5940_SetMappedLED(uint8_t logical_index, uint16_t brightness) {
+void TLC5940_SetMappedPhysicallyLED(uint8_t logical_index, uint16_t brightness) {
 	static const uint8_t mapping_table[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
 	uint8_t physical_index;
@@ -54,6 +54,17 @@ void TLC5940_SetMappedLED(uint8_t logical_index, uint16_t brightness) {
 	}
 
 	TLC5940_SetLED(physical_index, brightness);
+}
+
+//# index is the physical layout, with its index pointing to the actual key layout
+static const uint8_t key_to_logical_map[25] = { 10, 11, 0, 12, 1, 13, 14, 2,
+			15, 3, 16, 4, 17, 18, 5, 19, 6, 20, 21, 7, 22, 8, 23, 9, 24 };
+
+void TLC5940_SetMappedByKeyLED(uint8_t key_index, uint16_t brightness) {
+	if (key_index < 25) {
+		TLC5940_SetMappedPhysicallyLED(key_to_logical_map[key_index],
+				brightness);
+	}
 }
 
 static void TLC5940_SendPWMData(void) {

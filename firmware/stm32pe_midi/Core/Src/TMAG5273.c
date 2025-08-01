@@ -837,8 +837,11 @@ uint8_t TMAG5273_ReadRegister16(TMAG5273_Handle_t *pHandle, uint8_t reg,
 uint8_t TMAG5273_WriteRegister(TMAG5273_Handle_t *pHandle, uint8_t reg,
 		uint8_t data) {
 	uint8_t msg[2] = { reg, data };
-	return HAL_I2C_Master_Transmit(pHandle->pI2c, (pHandle->address << 1), msg,
-			2, pHandle->timeout);
+	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(pHandle->pI2c,
+			(pHandle->address << 1), msg, 2, pHandle->timeout);
+	printf("I2C Write: addr=0x%02X reg=0x%02X data=0x%02X status=%d\n",
+			pHandle->address, reg, data, status);
+	return status;
 }
 
 /**
@@ -1140,4 +1143,15 @@ void atan2CORDIC(int16_t numerator, int16_t denominator,
 	if (den < 0)
 		den = -den;
 	results[1] = (((int64_t) den) * magArray[i - 1]) >> (15 + 16);
+}
+
+uint8_t TMAG5273_RewriteI2CAddress(TMAG5273_Handle_t *pHandle, uint8_t new_addr) {
+    if (new_addr < 0x08 || new_addr > 0x77)
+        return 3;
+    uint8_t reg_val = (new_addr << 1) | 0x01;
+    uint8_t result = TMAG5273_WriteRegister(pHandle, 0x0C, reg_val);
+    if (result == 0) {
+        pHandle->address = new_addr; // update handle's address
+    }
+    return result;
 }

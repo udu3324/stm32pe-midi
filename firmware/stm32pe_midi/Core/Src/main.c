@@ -44,16 +44,23 @@
 #define DEBUG3_LED_GPIO_Port GPIOA
 #define DEBUG3_LED_Pin GPIO_PIN_10
 
-//in order of sharps/flats/black keys left-right, to bottom row white keys left-right
+//in order of b, c, c#, d, etc..
 uint16_t light_key_arr[25] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-//in order of b, c, c#, d, etc..
 bool key_activated[25];
 float key_velocity_time[25];
 float key_dist_change[25];
 
 float key_dist_max[25];
+
+TMAG5273_Handle_t tmag_handles[25];
+
+uint8_t tmag_addr_arr[25] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
+		0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22,
+		0x23, 0x24, 0x25, 0x26, 0x27, 0x28 };
+
+
 
 /* USER CODE END Includes */
 
@@ -243,31 +250,27 @@ int main(void)
 
 	// start the timer for the multiplexer ic for the leds
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-
-	//set mp-reset on the i2c multiplexer to be high as it is active-low reset input
+	// set mp-reset on the i2c multiplexer to be high as it is active-low reset input
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
 
-	//disable all i2c channels for a clean slate bruh
+	// disable all i2c channels for a clean slate bruh
 	if (i2c_mux_reset(&tca_mux) != 0) {
 		// Handle error, e.g., blink LED or halt
 		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
 	}
 
-	// init device stack for tiny usb!!!
-	tusb_init(BOARD_DEVICE_RHPORT_NUM, NULL);
-
-	// Example: select channel 6 on the mux to talk to sensors on SC6
-	if (i2c_mux_select(&tca_mux, 6) != 0) {
+	// select a channel on the mux to talk to sensor devices
+	if (i2c_mux_select(&tca_mux, 0) != 0) {
 		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
 	}
 
-	uint8_t tmag_addr = 0x35 << 1;
-	if (HAL_I2C_IsDeviceReady(&hi2c1, tmag_addr, 3, HAL_MAX_DELAY) != HAL_OK) {
-		HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
-	}
+	//uint8_t tmag_addr = 0x35 << 1;
+	//if (HAL_I2C_IsDeviceReady(&hi2c1, tmag_addr, 3, HAL_MAX_DELAY) != HAL_OK) {
+	//	HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin, GPIO_PIN_SET);
+	//}
 
 	TMAG5273_Handle_t tmag = { .pI2c = &hi2c1,
-			.address = 0x35, // 0x41
+			.address = 0x35,
 			.magTempcoMode = TMAG5273_NO_MAG_TEMPCO, .convAvgMode =
 					TMAG5273_CONV_AVG_32X, .readMode =
 					TMAG5273_READ_MODE_STANDARD, .lplnMode = TMAG5273_LOW_NOISE,
@@ -282,7 +285,31 @@ int main(void)
 			.sensor_id =
 					0, .sleep = TMAG5276_10MS };
 
-	bool tmag_initialized = false;
+	TMAG5273_Init(&tmag);
+
+	uint8_t result = TMAG5273_RewriteI2CAddress(&tmag, tmag_addr_arr[0]);
+
+	if (result != 0) {
+		for (int i; i < result; i++) {
+			HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin,
+					GPIO_PIN_SET);
+			HAL_Delay(1000);
+			HAL_GPIO_WritePin(DEBUG2_LED_GPIO_Port, DEBUG2_LED_Pin,
+					GPIO_PIN_RESET);
+			HAL_Delay(1000);
+		}
+
+		HAL_Delay(5000);
+
+		while (1) {
+			HAL_GPIO_TogglePin(DEBUG4_LED_GPIO_Port, DEBUG4_LED_Pin);
+			HAL_Delay(1000);
+		}
+
+	}
+
+	// init device stack for tiny usb!!!
+	tusb_init(BOARD_DEVICE_RHPORT_NUM, NULL);
 
   /* USER CODE END 2 */
 
@@ -299,17 +326,14 @@ int main(void)
 		//TLC5940_BreatheAllTest();
 		//continue;
 
-		//printf("Test 1\r\n");
+		printf("Test 1\r\n");
 
-		if (!tmag_initialized) { // && hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED
-			TMAG5273_Init(&tmag);
-			tmag_initialized = true;
-		}
+
 
 		//printf("Test 2\r\n");
 		//printf("Test 2.5 - Device ID set as: 0x%02X\n", tmag.deviceId);
 
-		//for (uint8_t addr = 0x30; addr <= 0x3F; addr++) {
+		//for (uint8_t addr = 0x08; addr <= 0x77; addr++) {
 		//	if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK) {
 		//		printf("Found device at 0x%02X\n", addr);
 		//	}
@@ -319,12 +343,12 @@ int main(void)
 
 		//uint8_t id;
 		//if (TMAG5273_ReadRegister(&tmag, DEVICE_ID, 1, &id) == 0) {
-		//	printf("Device ID: 0x%02X\n", id);
+		//	printf("Device ID: 0x%02X, \n", id);
 		//} else {
 		//	printf("Failed to read Device ID\n");
 		//}
 
-		// reading register data to test i2c device
+		// reading raw register data to test i2c device
 		//uint8_t raw_data[6];
 		//if (TMAG5273_ReadRegister(&tmag, X_MSB_RESULT, 6, raw_data) == 0) {
 		//	printf("Raw register data: ");
@@ -335,6 +359,17 @@ int main(void)
 		//} else {
 		//	printf("Failed to read raw register data\r\n");
 		//}
+
+		// read address register to see if address is actually rewritten
+		uint8_t addr_reg = 0;
+		if (TMAG5273_ReadRegister(&tmag, 0x0C, 1, &addr_reg) == 0) {
+			printf("I2C address register: 0x%02X\n", addr_reg);
+
+			printf("\r\n");
+		} else {
+			printf("Failed to read i2c register data\r\n");
+		};
+
 
 		// reading sensor to output led/etc.
 		TMAG5273_Axis_t mag;
@@ -350,7 +385,7 @@ int main(void)
 			uint16_t bz_u16 = map_float_to_uint16(mag.Bz, 10.0f, 80.0f, 0,
 					3000);
 
-			TLC5940_SetMappedLED(9, bz_u16);
+			TLC5940_SetMappedByKeyLED(0, bz_u16);
 			TLC5940_Update();
 		}
 

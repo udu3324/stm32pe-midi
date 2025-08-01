@@ -310,6 +310,9 @@ void TMAG5273_ConfigTempChEnabled(TMAG5273_Handle_t *pHandle, uint8_t enabled);
 uint8_t TMAG5273_ReadRegister(TMAG5273_Handle_t *pHandle, uint8_t reg,
 		uint8_t length, uint8_t *data);
 
+uint8_t TMAG5273_RewriteI2CAddress(TMAG5273_Handle_t *pHandle,
+		uint8_t new_addr);
+
 //inline uint8_t TMAG5273_calculateCRC(const uint8_t *data, uint8_t len);
 
 #ifdef __cplusplus
