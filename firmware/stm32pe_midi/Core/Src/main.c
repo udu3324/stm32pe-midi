@@ -380,23 +380,6 @@ int main(void)
 
 		tud_task();
 
-		//TLC5940_BreatheAllTest();
-		//continue;
-
-		//printf("Test 1\r\n");
-
-		// reading raw register data to test i2c device
-		//uint8_t raw_data[6];
-		//if (TMAG5273_ReadRegister(&tmag, X_MSB_RESULT, 6, raw_data) == 0) {
-		//	printf("Raw register data: ");
-		//	for (int i = 0; i < 6; i++) {
-		//		printf("0x%02X ", raw_data[i]);
-		//	}
-		//	printf("\r\n");
-		//} else {
-		//	printf("Failed to read raw register data\r\n");
-		//}
-
 		//dont allow cutoffs to be set until a solid line of sensor values are being read good
 		static uint32_t startup_tick = 0;
 		if (startup_tick == 0) {
