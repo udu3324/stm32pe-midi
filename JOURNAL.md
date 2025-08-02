@@ -565,3 +565,21 @@ After getting the main loop working with all 25 sensors, it was magic. The light
 I had to implement a value that would normal the resting sensor values as some would be too close to the sensor. It was some neat logic that works flawlessly.
 
 **Total time spent: 5 hours**
+
+# August 1st: Velocity and Octave Change
+
+<img width="1687" height="556" alt="Screenshot 2025-08-01 175933" src="https://github.com/user-attachments/assets/ee60559a-1c8f-489e-938c-f264c5f7e4d7" />
+
+<img width="548" height="228" alt="Screenshot 2025-08-01 174556" src="https://github.com/user-attachments/assets/294b0e8f-2da9-456d-be1e-57a0be13e188" />
+
+My original velocity sensing code was a bit finicky and wasn't actually measuring the time between two points. I updated it now to be more reliable and mapped to a realistic curve.
+
+I noticed that there was some sort of latency with the sensors, so I edited the system clock speed in cubemx from 64 to 400. I didn't notice any change though.
+
+<img width="690" height="456" alt="image" src="https://github.com/user-attachments/assets/408edfb5-f9aa-488b-a3dc-0a558494a9ad" />
+
+Finally, I added a way to change the octave by holding two keys for 3 seconds to turn on octave mode. It took quite a while to add this feature in, but made the user experience so much better.
+
+All the timing was based on `HAL_GetTick()` and was a little hard to think about. It was like pressing tap on a stopwatch and measuring that time from there. The last problem I had while trying to implement this mode was getting out of it. It would move an octave up or down as the keys used to get into octave mode were also reused to go up or down an octave. To fix this, I had to put a delay of 200ms to check if both keys were pressed.
+
+**Total time spent: 4 hours**
