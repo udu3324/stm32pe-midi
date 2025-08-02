@@ -51,13 +51,20 @@
 // ==========================================================================================
 
 //midi
-int start_octave = 4; //midi codes
-int mt_send_black = 40; //midi on
-int mt_send_white = 30; //midi on
+int start_octave = 4; //midi code shift
+int mt_send_black = 40; //midi on threshold
+int mt_send_white = 30; //midi on threshold
+
+//octave
+uint32_t octave_change_mode_time_threshold = 200; //diff change between mode/octive
+uint32_t octave_led_flash = 500; //ms between led flash during mode
 
 //led
 int startup_cutoff_wait = 100; //led cutoff
 
+// ==========================================================================================
+// the config is above
+// ==========================================================================================
 
 //all data below is in order of b, c, c#, d, d#, e, etc..
 //uint16_t light_key_arr[25];
@@ -84,6 +91,13 @@ uint8_t tmag_addr_arr[25] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
 bool is_black_key[25] = { false, false, true, false, true, false, false, true,
 		false, true, false, true, false, false, true, false, true, false, false,
 		true, false, true, false, true, false };
+
+uint32_t octave_held_time = -1; //mode change
+uint32_t octave_mode_time_elapsed = 0; //octave led
+uint32_t octave_mode_time2_elapsed = -1; //mode change safety
+
+bool octave_change_mode = false; //mode on/off
+bool prevent_rapid_fire = false; //can change octave
 
 /* USER CODE END Includes */
 
@@ -114,8 +128,7 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
 
-extern SPI_HandleTypeDef hspi1;
-//extern USBD_HandleTypeDef hUsbDeviceFS;
+//TODO remove?
 
 /* USER CODE END PV */
 
@@ -136,7 +149,7 @@ static void MX_USB_OTG_FS_PCD_Init(void);
 
 i2c_mux_t tca_mux = { .hi2c = &hi2c1,     // Using I2C1 on PB6 (SCL) / PB7 (SDA)
 		.rst_port = GPIOB,          // Reset pin is PB7
-		.rst_pin = GPIO_PIN_7,      // Use correct GPIO pin number
+		.rst_pin = GPIO_PIN_8,      // Use correct GPIO pin number
 		.addr_offset = 0            // 0 if all A0/A1/A2 pins are GND
 		};
 
@@ -209,6 +222,7 @@ int main(void)
 
 	// start the timer for the led mux
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+
 	// set mp-reset on the i2c mux to be high as it is active-low reset input
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
 
@@ -449,6 +463,76 @@ int main(void)
 						ret);
 			}
 
+			//octave change
+			if (key_activated[0] && key_activated[24]) {
+				if (octave_held_time == -1) {
+					//set the first time
+					octave_held_time = HAL_GetTick();
+				} else if ((HAL_GetTick() - octave_held_time) > 3000
+						&& octave_held_time != -1) {
+					//count down the time until its more than 3 seconds held
+					octave_change_mode = !octave_change_mode;
+
+					if (octave_change_mode) {
+						octave_mode_time_elapsed = HAL_GetTick();
+					} else {
+						HAL_GPIO_WritePin(DEBUG4_LED_GPIO_Port, DEBUG4_LED_Pin,
+								GPIO_PIN_RESET);
+					}
+
+					//prevent rapid fire of changing modes
+					octave_held_time = -1;
+				}
+			} else if (!key_activated[0] && !key_activated[24]) {
+				//reset time if both keys are unactivated
+				octave_held_time = -1;
+			}
+
+			//turn status led on to indicate octave change mode
+			if (octave_change_mode
+					&& (HAL_GetTick() - octave_mode_time_elapsed)
+							> octave_led_flash) {
+				HAL_GPIO_TogglePin(DEBUG4_LED_GPIO_Port, DEBUG4_LED_Pin);
+				octave_mode_time_elapsed = HAL_GetTick();
+			}
+
+			//octave down
+			if (d == 0 && mag.Bz > mt_send_white && start_octave >= 0
+					&& !prevent_rapid_fire && octave_change_mode) {
+				if (octave_mode_time2_elapsed == -1) {
+					octave_mode_time2_elapsed = HAL_GetTick();
+				} else if (key_activated[0] && key_activated[24]) {
+					//catch if user is trying to exit octave mode instead of changing it
+					octave_mode_time2_elapsed = -1;
+
+				} else if ((HAL_GetTick() - octave_mode_time2_elapsed)
+						> octave_change_mode_time_threshold) {
+					start_octave--;
+					fill_midi_key_arr(midi_key_arr, 25, start_octave);
+					prevent_rapid_fire = true;
+					octave_mode_time2_elapsed = -1;
+				}
+			}
+
+			//octave up
+			if (d == 24 && mag.Bz > mt_send_white && start_octave <= 9
+					&& !prevent_rapid_fire && octave_change_mode) {
+				if (octave_mode_time2_elapsed == -1) {
+					octave_mode_time2_elapsed = HAL_GetTick();
+				} else if (key_activated[0] && key_activated[24]) {
+					//catch if user is trying to exit octave mode instead of changing it
+					octave_mode_time2_elapsed = -1;
+
+				} else if ((HAL_GetTick() - octave_mode_time2_elapsed)
+						> octave_change_mode_time_threshold) {
+					start_octave++;
+					fill_midi_key_arr(midi_key_arr, 25, start_octave);
+					prevent_rapid_fire = true;
+					octave_mode_time2_elapsed = -1;
+				}
+			}
+
+
 			//printf("Bz = %.3f mT, Angle: %.2f deg, Change: %.2f, Max: %.2f\r\n", mag.Bz, angle.angle, current_change, key_dist_max[d]);
 
 			//start time for measuring velocity
@@ -471,6 +555,8 @@ int main(void)
 
 				//reset velocity measurement
 				key_tick_start[d] = 0;
+
+				prevent_rapid_fire = false;
 			}
 
 			//use a specific mt send as the black keys have a shorter distance compared to white keys
