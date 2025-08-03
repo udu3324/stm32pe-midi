@@ -7,6 +7,7 @@ created_at: "2025-06-06"
 
 **Total time taken: 52 hours**
 
+**Total time taken: 131.5 hours (fabrication + firmware)**
 
 # June 6th: Sketching out the idea
 
