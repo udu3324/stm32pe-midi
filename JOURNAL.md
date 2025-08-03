@@ -590,6 +590,17 @@ The MPE MIDI protocol is an extension of the regular midi protocol, so it was qu
 
 <img width="1433" height="380" alt="Screenshot 2025-08-02 200215" src="https://github.com/user-attachments/assets/223f187d-a0a4-469d-8937-9c4dd1cabc51" />
 
+```
+if (angle.angle < 91 && angle.angle > 44) { // 44-91 down
+	shift = map_float_to_int16(angle.angle, 44, 91, -4096, 0);
+} else if (angle.angle > 100 && angle.angle < 134) { // 100-134 up
+	shift = map_float_to_int16(angle.angle, 100, 134, 0, 4096);
+} else if (angle.angle < 44) { //under 44
+	shift = map_float_to_int16(angle.angle, 36, 44, -8192, -4096);
+} else if (angle.angle > 134) { //over 134
+	shift = map_float_to_int16(angle.angle, 134, 155, 4096, 8192);
+}
+```
 At first, most of my pitch change calculations were relatively based on an arbitrary angle that isn't shared by all of the hall effect sensors. This would cause some keys to have a bias to be pitched more up or down than usual. I solved this by storing the keys first angle from its first actuation. 
 
 The only caveaut to this is that the user may not press the key flat at first which create a bad reference for later calculations.
