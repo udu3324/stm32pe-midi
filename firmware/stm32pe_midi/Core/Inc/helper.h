@@ -1,8 +1,11 @@
 #ifndef HELPER_H
 #define HELPER_H
 
-uint16_t map_float_to_uint16(float x, float in_min, float in_max,
-		uint16_t out_min, uint16_t out_max);
+int16_t map_float_to_int16(float x, float in_min, float in_max,
+		int16_t out_min, int16_t out_max);
+
+uint8_t map_float_to_uint8(float x, float in_min, float in_max, uint8_t out_min,
+		uint8_t out_max);
 
 int8_t map_velocity_log(uint32_t t);
 

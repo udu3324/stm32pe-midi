@@ -36,6 +36,7 @@
 #include "tusb.h"
 
 #include "helper.h"
+#include "mpe.h"
 
 #define DEBUG4_LED_GPIO_Port GPIOA
 #define DEBUG4_LED_Pin GPIO_PIN_8
@@ -55,6 +56,13 @@ int start_octave = 4; //midi code shift
 int mt_send_black = 40; //midi on threshold
 int mt_send_white = 30; //midi on threshold
 
+int16_t pitch_mpe_st = 682; //mpe semitone pitch range (682 = 4st, 341 = 2st)
+float angle_mpe_padding = 15; //mpe pitch
+float angle_mpe_realistic_max = 25; //mpe pitch
+
+float aftertouch_mpe_white_padding = 9; //mpe aftertouch
+float aftertouch_mpe_black_padding = 15; //mpe aftertouch
+
 //octave
 uint32_t octave_change_mode_time_threshold = 200; //diff change between mode/octive
 uint32_t octave_led_flash = 500; //ms between led flash during mode
@@ -70,8 +78,10 @@ int startup_cutoff_wait = 100; //led cutoff
 //uint16_t light_key_arr[25];
 
 bool key_activated[25]; //midi on/off
+uint8_t key_note_active[25]; //midi on/off safety
 
 float key_raw_initial[25]; //midi velocity
+float key_raw_angle_initial[25]; //mpe pitch
 
 float key_tick_start[25]; //midi velocity
 
@@ -377,6 +387,7 @@ int main(void)
 	for (int i = 0; i < 25; i++) {
 		key_low_cutoff[i] = -1.0f;
 		key_tick_start[i] = 0;
+		key_raw_angle_initial[i] = -1;
 	}
 
 	// init device stack for tiny usb!!!
@@ -407,6 +418,7 @@ int main(void)
 		for (int d = 0; d < 25; d++) {
 
 			// read address register to see if address is actually rewritten
+			//TODO remove in next code cleanup
 			uint8_t addr_reg = 0;
 			if (TMAG5273_ReadRegister(&tmag_handles[d], 0x0C, 1, &addr_reg)
 					== 0) {
@@ -417,14 +429,14 @@ int main(void)
 						d);
 			};
 
-			// reading sensor to output led/etc.
+			// reading rotation from sensor
 			TMAG5273_Axis_t mag;
-			uint8_t ret = TMAG5273_ReadMagneticField(&tmag_handles[d], &mag);
-			if (ret != 0) {
-				printf(
-						"I2C Address = 0x%02X, Sensor Index = %d, ReadMagneticField failed code = %d\r\n",
-						addr_reg, d, ret);
-			} else {
+			TMAG5273_Angle_t angle;
+			uint8_t ret = -1;
+
+			// reading sensor magnet pos. to output led/etc.
+			ret = TMAG5273_ReadMagneticField(&tmag_handles[d], &mag);
+			if (ret == 0) {
 				//printf("Bx = %.3f mT, By = %.3f mT, Bz = %.3f mT\r\n", mag.Bx, mag.By, mag.Bz);
 				//printf("Return value: %u\r\n", ret);
 
@@ -441,25 +453,27 @@ int main(void)
 					key_off_cutoff[d] = mag.Bz + 5; //add a padding of 5
 
 					key_raw_initial[d] = mag.Bz;
+
+					//key_raw_angle_initial[d] = angle.angle -- moved to key on for reasons explained
 				} else {
 					//normalize mag.Bz around ~9
-					bz_u16 = map_float_to_uint16(mag.Bz - key_low_cutoff[d],
+					bz_u16 = map_float_to_int16(mag.Bz - key_low_cutoff[d],
 							10.0f, 80.0f, 0, 3000);
 				}
 
 				TLC5940_SetMappedByKeyLED(d, bz_u16);
 				TLC5940_Update();
+			} else {
+				printf(
+						"I2C Address = 0x%02X, Sensor Index = %d, ReadMagneticField failed code = %d\r\n",
+						addr_reg, d, ret);
 			}
 
-			// reading rotation from sensor
-			TMAG5273_Angle_t angle;
 			ret = TMAG5273_ReadAngle(&tmag_handles[d], &angle);
 			if (ret == 0) {
-				//TODO do mpe midi with this
 				//printf("Angle: %.2f deg, Magnitude: %.2f\r\n", angle.angle, angle.magnitude);
 			} else {
-				printf("Sensor Index = %d, Failed angle read, code: %d\r\n",
-						d,
+				printf("Sensor Index = %d, Failed angle read, code: %d\r\n", d,
 						ret);
 			}
 
@@ -532,7 +546,7 @@ int main(void)
 				}
 			}
 
-
+			//TODO remove next code cleanup
 			//printf("Bz = %.3f mT, Angle: %.2f deg, Change: %.2f, Max: %.2f\r\n", mag.Bz, angle.angle, current_change, key_dist_max[d]);
 
 			//start time for measuring velocity
@@ -544,21 +558,6 @@ int main(void)
 				key_tick_start[d] = 0;
 			}
 
-			//turn off key
-			if (mag.Bz < key_off_cutoff[d] && key_activated[d]) {
-				uint8_t note_off[3] = { 0x80 | 0, midi_key_arr[d], 0 };
-				
-				tud_midi_stream_write(0, note_off, 3);
-				printf("%d, midi = off, code = %d\r\n", d, midi_key_arr[d]);
-
-				key_activated[d] = false;
-
-				//reset velocity measurement
-				key_tick_start[d] = 0;
-
-				prevent_rapid_fire = false;
-			}
-
 			//use a specific mt send as the black keys have a shorter distance compared to white keys
 			int mt_send = is_black_key[d] ? mt_send_black : mt_send_white;
 
@@ -567,17 +566,88 @@ int main(void)
 				uint8_t measured_velocity = map_velocity_log(
 						HAL_GetTick() - key_tick_start[d]);
 				
-				uint8_t note_on[3] = { 0x90 | 0, midi_key_arr[d],
-						measured_velocity };
+				//uint8_t note_on[3] = { 0x90 | 0, midi_key_arr[d], measured_velocity };
 
-				tud_midi_stream_write(0, note_on, 3);
+				//tud_midi_stream_write(0, note_on, 3);
+				MPE_Send_Note_On(midi_key_arr[d], measured_velocity);
 				printf(
 						"%d, midi = on, code = %d, velocity = %d\r\n", d,
 						midi_key_arr[d], measured_velocity);
 				
 				key_activated[d] = true;
+				key_note_active[d] = midi_key_arr[d];
+
+				//also set the raw initial angle here...
+				//some downsides of this is that the user has to press the key perfectly/mostly flat at startup or else the pitch will be offset
+				//though, this does solve the issue of the sensor changing the angle when the key is normally actuated for some reason
+				if (key_raw_angle_initial[d] == -1) {
+					key_raw_angle_initial[d] = angle.angle;
+					printf("%d, raw angle init = %0.2f\r\n", d,
+							key_raw_angle_initial[d]);
+				}
 			}
 
+			//turn off key
+			if (mag.Bz < key_off_cutoff[d] && key_activated[d]) {
+				//uint8_t note_off[3] = { 0x80 | 0, key_note_active[d], 0 };
+
+				//tud_midi_stream_write(0, note_off, 3);
+				MPE_Send_Note_Off(midi_key_arr[d]);
+				printf("%d, midi = off, code = %d\r\n", d, key_note_active[d]);
+
+				key_activated[d] = false;
+				key_note_active[d] = 0;
+
+				//reset velocity measurement
+				key_tick_start[d] = 0;
+
+				prevent_rapid_fire = false;
+			}
+
+			//pitch change per key
+			if (key_activated[d]) {
+				// black key bias - 40max, 44, 91-94-100mid, 134, 150max
+				// white key bias - 20max, 30, 82-84-86mid, 130, 140max
+				// +-20 from origin angle, +-5/3 as rest from origin angle
+				int16_t shift = 0;
+
+				if (angle.angle
+						> (key_raw_angle_initial[d] + angle_mpe_padding)) { //up
+					//min - the min includes the key's resting angle and the padding before pitch change gets triggered
+					//max - includes the above + the realistic max angle/roll for each key
+					shift = map_float_to_int16(angle.angle,
+							(key_raw_angle_initial[d] + angle_mpe_padding),
+							(key_raw_angle_initial[d] + angle_mpe_padding
+									+ angle_mpe_realistic_max), 0,
+							pitch_mpe_st);
+				} else if (angle.angle
+						< (key_raw_angle_initial[d] - angle_mpe_padding)) { //down
+					//same min/max for pitching up, but negative
+					shift = map_float_to_int16(angle.angle,
+							(key_raw_angle_initial[d] - angle_mpe_padding
+									- angle_mpe_realistic_max),
+							(key_raw_angle_initial[d] - angle_mpe_padding),
+							-pitch_mpe_st, 0);
+				}
+
+				MPE_Send_Pitch_Bend(midi_key_arr[d], shift);
+			}
+
+			int aftertouch_mpe_padding =
+					is_black_key[d] ?
+							aftertouch_mpe_black_padding :
+							aftertouch_mpe_white_padding;
+			
+			//aftertouch per key
+			if (mag.Bz > (mt_send + aftertouch_mpe_padding)
+					&& key_activated[d]) {
+				uint8_t pressure = 0;
+
+				pressure = map_float_to_uint8(mag.Bz,
+						(mt_send + aftertouch_mpe_padding), 78, 0, 127);
+
+				MPE_Send_Aftertouch(midi_key_arr[d], pressure);
+			}
 		}
 
   }

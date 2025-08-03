@@ -2,14 +2,24 @@
 #include "TMAG5273.h"
 #include "helper.h"
 
-uint16_t map_float_to_uint16(float x, float in_min, float in_max,
-		uint16_t out_min, uint16_t out_max) {
+int16_t map_float_to_int16(float x, float in_min, float in_max,
+		int16_t out_min, int16_t out_max) {
 	if (x < in_min)
 		x = in_min;
 	if (x > in_max)
 		x = in_max;
-	return (uint16_t) (((x - in_min) * (out_max - out_min)) / (in_max - in_min)
+	return (int16_t) (((x - in_min) * (out_max - out_min)) / (in_max - in_min)
 			+ out_min);
+}
+
+uint8_t map_float_to_uint8(float x, float in_min, float in_max, uint8_t out_min,
+		uint8_t out_max) {
+	if (x < in_min)
+		x = in_min;
+	if (x > in_max)
+		x = in_max;
+	return (uint8_t) (
+			((x - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min);
 }
 
 //internal
