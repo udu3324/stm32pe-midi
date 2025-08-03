@@ -48,7 +48,7 @@
 #define DEBUG3_LED_Pin GPIO_PIN_10
 
 // ==========================================================================================
-// the config is below
+// the config is below (not really recommended to edit these below unless if yk what you are doing)
 // ==========================================================================================
 
 //midi
@@ -56,6 +56,7 @@ int start_octave = 4; //midi code shift
 int mt_send_black = 40; //midi on threshold
 int mt_send_white = 30; //midi on threshold
 
+//mpe
 int16_t pitch_mpe_st = 682; //mpe semitone pitch range (682 = 4st, 341 = 2st)
 float angle_mpe_padding = 15; //mpe pitch
 float angle_mpe_realistic_max = 25; //mpe pitch
@@ -68,7 +69,14 @@ uint32_t octave_change_mode_time_threshold = 200; //diff change between mode/oct
 uint32_t octave_led_flash = 500; //ms between led flash during mode
 
 //led
-int startup_cutoff_wait = 100; //led cutoff
+int startup_cutoff_wait = 100; //led cutoff + cutoff for initial sensor readings saving
+
+//mode
+uint32_t octave_mode_hold_down = 1500; //octave mode keys milliseconds to hold down & change
+uint32_t mpe_mode_hold_down = 3000; //~ same above but for mpe mode keys
+
+//debug
+bool disable_comport = false; //silences comport to possibly make processing faster?
 
 // ==========================================================================================
 // the config is above
@@ -102,12 +110,15 @@ bool is_black_key[25] = { false, false, true, false, true, false, false, true,
 		false, true, false, true, false, false, true, false, true, false, false,
 		true, false, true, false, true, false };
 
-uint32_t octave_held_time = -1; //mode change
+uint32_t octave_held_time = -1; //octave mode change
 uint32_t octave_mode_time_elapsed = 0; //octave led
 uint32_t octave_mode_time2_elapsed = -1; //mode change safety
 
 bool octave_change_mode = false; //mode on/off
 bool prevent_rapid_fire = false; //can change octave
+
+bool mpe_midi_mode = true; //mpe mode change
+uint32_t mpe_held_time = -1; //time saving
 
 /* USER CODE END Includes */
 
@@ -165,6 +176,10 @@ i2c_mux_t tca_mux = { .hi2c = &hi2c1,     // Using I2C1 on PB6 (SCL) / PB7 (SDA)
 
 int _write(int file, char *ptr, int len) {
 	(void) file;
+
+	if (disable_comport) {
+		return 0;
+	}
 
 	if (!tud_cdc_connected()) {
 		return 0;
@@ -390,6 +405,13 @@ int main(void)
 		key_raw_angle_initial[i] = -1;
 	}
 
+	// for if the user changed the default midi mpe mode
+	if (mpe_midi_mode) {
+		HAL_GPIO_WritePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin, GPIO_PIN_RESET);
+	} else {
+		HAL_GPIO_WritePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin, GPIO_PIN_SET);
+	}
+
 	// init device stack for tiny usb!!!
 	tusb_init(BOARD_DEVICE_RHPORT_NUM, NULL);
 
@@ -477,12 +499,39 @@ int main(void)
 						ret);
 			}
 
+			//mpe midi mode change
+			if (key_activated[1] && key_activated[22]) {
+				if (mpe_held_time == -1) {
+					//set the first time
+					mpe_held_time = HAL_GetTick();
+				} else if ((HAL_GetTick() - mpe_held_time) > mpe_mode_hold_down
+						&& mpe_held_time != -1) {
+					//count down the time until its more than 3 seconds held
+					mpe_midi_mode = !mpe_midi_mode;
+
+					if (mpe_midi_mode) {
+						HAL_GPIO_WritePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin,
+								GPIO_PIN_RESET);
+					} else {
+						HAL_GPIO_WritePin(DEBUG3_LED_GPIO_Port, DEBUG3_LED_Pin,
+								GPIO_PIN_SET);
+					}
+
+					//prevent rapid fire of changing modes
+					mpe_held_time = -1;
+				}
+			} else if (!key_activated[1] && !key_activated[22]) {
+				//reset time if both keys are unactivated
+				mpe_held_time = -1;
+			}
+
 			//octave change
 			if (key_activated[0] && key_activated[24]) {
 				if (octave_held_time == -1) {
 					//set the first time
 					octave_held_time = HAL_GetTick();
-				} else if ((HAL_GetTick() - octave_held_time) > 3000
+				} else if ((HAL_GetTick() - octave_held_time)
+						> octave_mode_hold_down
 						&& octave_held_time != -1) {
 					//count down the time until its more than 3 seconds held
 					octave_change_mode = !octave_change_mode;
@@ -566,10 +615,15 @@ int main(void)
 				uint8_t measured_velocity = map_velocity_log(
 						HAL_GetTick() - key_tick_start[d]);
 				
-				//uint8_t note_on[3] = { 0x90 | 0, midi_key_arr[d], measured_velocity };
+				if (mpe_midi_mode) {
+					MPE_Send_Note_On(midi_key_arr[d], measured_velocity);
+				} else {
+					uint8_t note_on[3] = { 0x90 | 0, midi_key_arr[d],
+							measured_velocity };
 
-				//tud_midi_stream_write(0, note_on, 3);
-				MPE_Send_Note_On(midi_key_arr[d], measured_velocity);
+					tud_midi_stream_write(0, note_on, 3);
+				}
+
 				printf(
 						"%d, midi = on, code = %d, velocity = %d\r\n", d,
 						midi_key_arr[d], measured_velocity);
@@ -589,10 +643,14 @@ int main(void)
 
 			//turn off key
 			if (mag.Bz < key_off_cutoff[d] && key_activated[d]) {
-				//uint8_t note_off[3] = { 0x80 | 0, key_note_active[d], 0 };
+				if (mpe_midi_mode) {
+					MPE_Send_Note_Off(key_note_active[d]);
+				} else {
+					uint8_t note_off[3] = { 0x80 | 0, key_note_active[d], 0 };
 
-				//tud_midi_stream_write(0, note_off, 3);
-				MPE_Send_Note_Off(midi_key_arr[d]);
+					tud_midi_stream_write(0, note_off, 3);
+				}
+
 				printf("%d, midi = off, code = %d\r\n", d, key_note_active[d]);
 
 				key_activated[d] = false;
@@ -605,7 +663,7 @@ int main(void)
 			}
 
 			//pitch change per key
-			if (key_activated[d]) {
+			if (key_activated[d] && mpe_midi_mode) {
 				// black key bias - 40max, 44, 91-94-100mid, 134, 150max
 				// white key bias - 20max, 30, 82-84-86mid, 130, 140max
 				// +-20 from origin angle, +-5/3 as rest from origin angle
@@ -640,7 +698,8 @@ int main(void)
 			
 			//aftertouch per key
 			if (mag.Bz > (mt_send + aftertouch_mpe_padding)
-					&& key_activated[d]) {
+					&& key_activated[d]
+					&& mpe_midi_mode) {
 				uint8_t pressure = 0;
 
 				pressure = map_float_to_uint8(mag.Bz,
