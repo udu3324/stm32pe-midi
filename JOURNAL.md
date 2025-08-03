@@ -583,3 +583,25 @@ Finally, I added a way to change the octave by holding two keys for 3 seconds to
 All the timing was based on `HAL_GetTick()` and was a little hard to think about. It was like pressing tap on a stopwatch and measuring that time from there. The last problem I had while trying to implement this mode was getting out of it. It would move an octave up or down as the keys used to get into octave mode were also reused to go up or down an octave. To fix this, I had to put a delay of 200ms to check if both keys were pressed.
 
 **Total time spent: 4 hours**
+
+# August 2nd: MPE Protocol Implementation + Finished!!! 
+
+The MPE MIDI protocol is an extension of the regular midi protocol, so it was quite easy to convert a midi device to a mpe midi device. I created `mpe.c` to have all the mpe based functions all in one place. The only difference was that every note had its own channel and there was a bit more logic to make that happen. Those channels can then be sent extra data like aftertouch and per key pitch change.
+
+<img width="1433" height="380" alt="Screenshot 2025-08-02 200215" src="https://github.com/user-attachments/assets/223f187d-a0a4-469d-8937-9c4dd1cabc51" />
+
+At first, most of my pitch change calculations were relatively based on an arbitrary angle that isn't shared by all of the hall effect sensors. This would cause some keys to have a bias to be pitched more up or down than usual. I solved this by storing the keys first angle from its first actuation. 
+
+The only caveaut to this is that the user may not press the key flat at first which create a bad reference for later calculations.
+
+<img width="1528" height="461" alt="image" src="https://github.com/user-attachments/assets/a5289549-4666-403a-9b75-796a64abe308" />
+
+After finally setting up a ton logic that would make the per key pitch feel more intuitive, it felt like magic. It felt so surreal that I was making music as expressive as this.
+
+Aftertouch was then added as it was pretty easy to do. A ton of calculations for the pitch, velocity, and aftertouch also depended on if the key was white or black as the flexures acted differently.
+
+I still cant believe I actually made this. Its like in the Roli and Expressive E commercials. I managed to make my first midi controller that works well enough with capabilities of controllers costing upwards of $2k.
+
+Thank you Hack Club for funding this.
+
+**Total time spent: 8 hours**
