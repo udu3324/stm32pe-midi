@@ -1,6 +1,6 @@
 # stm32pe-midi controller
 
-![stm32pe-midi case v41](https://github.com/user-attachments/assets/fadfc3aa-1e23-4ed8-a343-4e25dc6622fd)
+<img width="1351" height="559" alt="image" src="https://github.com/user-attachments/assets/e3a31bd5-8311-4625-8dfc-6f1083a7edc2" />
 
 An expressive midi controller based on the stm32 ecosystem. It uses the MPE midi protocol to pass through signals that act as gestures/effects including velocity/note to any music DAW. (like ableton)
 
@@ -27,10 +27,27 @@ To reduce the cost of production, I decided to design a compliant mechanism (fle
 
 There were many problems while prototyping and laying out things. I had bare knowledge of how flexures worked and had to create as many prototypes as needed until the right movement was made. I also didn't know that the size of the board would be a big constraint that was completely ignored.
 
+Here's a list of problems after fabrication + firmare
+ * Flats/sharp/black keys flexure design suffers too much with plastic deformation permanently, as well as temporarily
+ * ^ This issue also causes a permanent distance change as there is now less distance to measure than before
+ * TMAG5273 library has no calibration feature and the measured angle is offset when brought closer
+ * Keys are a bit too slippery and need a dimple to grip the finger
+ * Flexures on both key types are a little on the firm side, takes a little time to get used to
+ * Last white key (b) is impractical as header wires are blocking its roll to pitch change up
+ * The power on led is a bit too bright, not changeable
+ * The base/case of the stm32h7 is kinda slippery
+
+These issues do not make the stm32pe midi keyboard worthless or horrible to use, but are just little tiny problems that could be polished in the future.
+
 # Firmware
 
+[tinyusb lib](https://github.com/hathach/tinyusb) on MIT license
 [i2c-mux stm32 lib](https://github.com/jtainer/i2c-mux) on BSD-2-Clause license
-[stm32 tmag5273 lib](https://github.com/devOramaMan/stm32_TMAG5273) on No License
+[stm32 tmag5273 lib](https://github.com/devOramaMan/stm32_TMAG5273) on No license (added a i2c address rewrite based on the datasheet as well as a crucial fix)
+
+Thank you to all the open source libraries above to make this project possible. I don't think I would have the expertise to implement all my ics this well.
+
+The firmware for the stm32pe midi controller is written in c/cpp on stm32cubeide and flashed with stm32cubeprogrammer. Amazing platform. Outdated UI (lol). **To be as transparent as possible**, some of the firmware was written/assisted with AI. About 20% of it was written mostly with AI, while the rest + logic that ties everything together was me. `mpe.c`, 80% of `helper.c`, 60% of `tlc5940.c`, and 5% of `main.c` with some fixes to `TMAG5273.c` was assisted with AI. I do understand what the firmware does. Depending on your perspective on AI, it shouldn't really matter as I know what I'm doing. 
 
 # Wiring
 
