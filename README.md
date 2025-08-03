@@ -41,9 +41,9 @@ These issues do not make the stm32pe midi keyboard worthless or horrible to use,
 
 # Firmware
 
-[tinyusb lib](https://github.com/hathach/tinyusb) on MIT license
-[i2c-mux stm32 lib](https://github.com/jtainer/i2c-mux) on BSD-2-Clause license
-[stm32 tmag5273 lib](https://github.com/devOramaMan/stm32_TMAG5273) on No license (added a i2c address rewrite based on the datasheet as well as a crucial fix)
+ * [tinyusb lib](https://github.com/hathach/tinyusb) on MIT license
+ * [i2c-mux stm32 lib](https://github.com/jtainer/i2c-mux) on BSD-2-Clause license
+ * [stm32 tmag5273 lib](https://github.com/devOramaMan/stm32_TMAG5273) on No license (added a i2c address rewrite based on the datasheet as well as a crucial fix)
 
 Thank you to all the open source libraries above to make this project possible. I don't think I would have the expertise to implement all my ics this well.
 
