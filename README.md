@@ -27,6 +27,11 @@ To reduce the cost of production, I decided to design a compliant mechanism (fle
 
 There were many problems while prototyping and laying out things. I had bare knowledge of how flexures worked and had to create as many prototypes as needed until the right movement was made. I also didn't know that the size of the board would be a big constraint that was completely ignored.
 
+Problems during fabrication
+ * TMAG5273 has a fixed i2c address which only differes by buying different models (B1, C1, D1) or running extra interrupt traces
+ * M screw spacers broke off when screwing in
+ * Too high of a tolerance between the board and 3d printed parts, had to cut off bottom two aligners on all keys
+
 Here's a list of problems after fabrication + firmare
  * Flats/sharp/black keys flexure design suffers too much with plastic deformation permanently, as well as temporarily
  * ^ This issue also causes a permanent distance change as there is now less distance to measure than before
@@ -36,6 +41,7 @@ Here's a list of problems after fabrication + firmare
  * Last white key (b) is impractical as header wires are blocking its roll to pitch change up
  * The power on led is a bit too bright, not changeable
  * The base/case of the stm32h7 is kinda slippery
+ * PLA/flexures gets deformed under heat in a car which can leave a permanent loss of height on keys
 
 These issues do not make the stm32pe midi keyboard worthless or horrible to use, but are just little tiny problems that could be polished in the future.
 
