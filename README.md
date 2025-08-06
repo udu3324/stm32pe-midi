@@ -29,21 +29,24 @@ To reduce the cost of production, I decided to design a compliant mechanism (fle
 
 There were many problems while prototyping and laying out things. I had bare knowledge of how flexures worked and had to create as many prototypes as needed until the right movement was made. I also didn't know that the size of the board would be a big constraint that was completely ignored.
 
+**Id highly recommend to look over these issues before building another stm32pe device!!**
+A lot of tolerances for the 3d prints are based on my 3d-printer! Make sure to print segments before making the entire thing to test for fit between the pcb, magnet, and everything.
+
 Problems during fabrication
- * TMAG5273 has a fixed i2c address which only differes by buying different models (B1, C1, D1) or running extra interrupt traces
- * M screw spacers broke off when screwing in
+ * TMAG5273 has a fixed i2c address which only differes by buying different models (B1, C1, D1) or by running extra interrupt traces
+ * M screw spacers broke off when screwing into plastic
  * Too high of a tolerance between the board and 3d printed parts, had to cut off bottom two aligners on all keys
 
 Here's a list of problems after fabrication + firmare
- * Flats/sharp/black keys flexure design suffers too much with plastic deformation permanently, as well as temporarily
- * ^ This issue also causes a permanent distance change as there is now less distance to measure than before
+ * The Black key flexure design suffers too much with plastic deformation permanently, as well as temporarily
+ * ^ This issue also causes a permanent distance change with less distance to measure and use
  * TMAG5273 library has no calibration feature and the measured angle is offset when brought closer
  * Keys are a bit too slippery and need a dimple to grip the finger
  * Flexures on both key types are a little on the firm side, takes a little time to get used to
  * Last white key (b) is impractical as header wires are blocking its roll to pitch change up
  * The power on led is a bit too bright, not changeable
  * The base/case of the stm32h7 is kinda slippery
- * PLA/flexures gets deformed under heat in a car which can leave a permanent loss of height on keys
+ * PLA flexures can get deformed under heat in a car which can leave a permanent loss of height on keys or mess more with the already high tolerance to allow press fitting
 
 These issues do not make the stm32pe midi keyboard worthless or horrible to use, but are just little tiny problems that could be polished in the future.
 
@@ -56,6 +59,36 @@ These issues do not make the stm32pe midi keyboard worthless or horrible to use,
 Thank you to all the open source libraries above to make this project possible. I don't think I would have the expertise to implement all my ics this well.
 
 The firmware for the stm32pe midi controller is written in c/cpp on stm32cubeide and flashed with stm32cubeprogrammer. Amazing platform. Outdated UI (lol). **To be as transparent as possible**, some of the firmware was written/assisted with AI. About 20% of it was written mostly with AI, while the rest + logic that ties everything together was me. `mpe.c`, 80% of `helper.c`, 60% of `tlc5940.c`, and 5% of `main.c` with some fixes to `TMAG5273.c` was assisted with AI. I do understand what the firmware does. Depending on your perspective on AI, it shouldn't really matter as I know what I'm doing. 
+
+All of the code is stored in `firmware/stm32pe_midi/Core/Src` or `/Core/Inc`. `Src/main.c` contains some user preferences that can be set through variables.
+```c
+//midi
+int start_octave = 4; //midi code shift
+int mt_send_black = 40; //midi on threshold
+int mt_send_white = 30; //midi on threshold
+
+//mpe
+int16_t pitch_mpe_st = 682; //mpe semitone pitch range (682 = 4st, 341 = 2st)
+float angle_mpe_padding = 15; //mpe pitch
+float angle_mpe_realistic_max = 25; //mpe pitch
+
+float aftertouch_mpe_white_padding = 9; //mpe aftertouch
+float aftertouch_mpe_black_padding = 15; //mpe aftertouch
+
+//octave
+uint32_t octave_change_mode_time_threshold = 200; //diff change between mode/octive
+uint32_t octave_led_flash = 500; //ms between led flash during mode
+
+//led
+int startup_cutoff_wait = 100; //led cutoff + cutoff for initial sensor readings saving
+
+//mode
+uint32_t octave_mode_hold_down = 1500; //octave mode keys milliseconds to hold down & change
+uint32_t mpe_mode_hold_down = 3000; //~ same above but for mpe mode keys
+
+//debug
+bool disable_comport = false; //silences comport to possibly make processing faster?
+```
 
 # Wiring
 
