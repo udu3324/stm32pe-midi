@@ -29,15 +29,16 @@ To reduce the cost of production, I decided to design a compliant mechanism (fle
 
 There were many problems while prototyping and laying out things. I had bare knowledge of how flexures worked and had to create as many prototypes as needed until the right movement was made. I also didn't know that the size of the board would be a big constraint that was completely ignored.
 
-**Id highly recommend to look over these issues before building another stm32pe device!!**
-A lot of tolerances for the 3d prints are based on my 3d-printer! Make sure to print segments before making the entire thing to test for fit between the pcb, magnet, and everything.
+**I highly recommend to look over these issues before building another stm32pe device!!!**
+A lot of tolerances for the 3d prints are based on my 3d-printer. Make sure to print segments before making the entire thing to test for fit between the pcb, magnet, and everything.
 
 Problems during fabrication
- * TMAG5273 has a fixed i2c address which only differes by buying different models (B1, C1, D1) or by running extra interrupt traces
+ * TMAG5273 has a fixed i2c address which only differs by buying different models (B1, C1, D1) or by running extra interrupt traces
  * M screw spacers broke off when screwing into plastic
  * Too high of a tolerance between the board and 3d printed parts, had to cut off bottom two aligners on all keys
+ * Connection (led mux) from main-board to other board was made through really tiny & painful to solder wires
 
-Here's a list of problems after fabrication + firmare
+Here's a list of problems after fabrication + firmware
  * The Black key flexure design suffers too much with plastic deformation permanently, as well as temporarily
  * ^ This issue also causes a permanent distance change with less distance to measure and use
  * TMAG5273 library has no calibration feature and the measured angle is offset when brought closer
@@ -61,6 +62,7 @@ Thank you to all the open source libraries above to make this project possible. 
 The firmware for the stm32pe midi controller is written in c/cpp on stm32cubeide and flashed with stm32cubeprogrammer. Amazing platform. Outdated UI (lol). **To be as transparent as possible**, some of the firmware was written/assisted with AI. About 20% of it was written mostly with AI, while the rest + logic that ties everything together was me. `mpe.c`, 80% of `helper.c`, 60% of `tlc5940.c`, and 5% of `main.c` with some fixes to `TMAG5273.c` was assisted with AI. I do understand what the firmware does. Depending on your perspective on AI, it shouldn't really matter as I know what I'm doing. 
 
 All of the code is stored in `firmware/stm32pe_midi/Core/Src` or `/Core/Inc`. `Src/main.c` contains some user preferences that can be set through variables.
+
 ```c
 //midi
 int start_octave = 4; //midi code shift
@@ -118,6 +120,7 @@ I forgot to add two more parts to the bom. They have been covered out of pocket 
 |-----------------------|---------|-------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
 | 5mm Cube Magnets      | $16.99  | 45    | Amazon   | I could not find any listings with lower quantities                                                                                                          | [https://www.amazon.com/dp/B0CW9GVTX2](https://www.amazon.com/dp/B0CW9GVTX2)                           |
 | M3 5mm Screws         | ¥2.14   | 50    | Taobao   | Pretty cheap! (30 cents usd)                                                                                                                                 | [https://detail.tmall.com/item.htm?id=722759297726](https://detail.tmall.com/item.htm?id=722759297726) |
+| Female 10pin Headers  | $5.62   | 1     | Mouser   | This is for the main board. The part itself **costs $0.63 without taxes/shipping.**                                                                          |                                                                                                        |
 | JLCPCB Two Design Fee | $38.99  | n/a   | JLCPCB   | 😭 i did not think about this while designing, i tried negotiating and doing everything                                                                      |                                                                                                        |
 | TMAG5273-B1/C1/D1     | $23.28  | 18    | Mouser   | i stg the datasheet said the sensor's i2c addresses were reprogrammable.. but they didn't say i needed to hookup interrupts to them too... lesson learned :p |                                                                                                        |
 | Total out of pocket   | $79.56  |       |          |                                                                                                                                                              |                                                                                                        |
